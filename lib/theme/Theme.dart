@@ -3,7 +3,7 @@ import 'package:flutter/material.dart' show Brightness, Color, ColorScheme;
 const Color _cDarkOnBackground = Color(0xFFE6E6E6); // #E6E6E6
 const Color _cDarkSurface = Color(0xFF14161D);
 const Color _cDarkOnSurface = Color(0xFFE1E1E1);
-const Color _cSurfaceContainerHighest = Color(0xFF2B2E3A);
+const Color _cSurfaceContainerHighest = Color(0xFF211F26);
 const Color _cDarkOnSurfaceVariant = Color(0xFFE6E6E6);
 const Color _cPrimary = Color(0xFF8080FF); // #8080FF
 const Color _cPrimaryContainerDark = Color(0xFF4C4C7D);
