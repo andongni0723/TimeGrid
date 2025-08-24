@@ -1,0 +1,48 @@
+//include ':app'
+//
+//def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
+//def properties = new Properties()
+//
+//assert localPropertiesFile.exists()
+//localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
+//
+//def flutterSdkPath = properties.getProperty("flutter.sdk")
+//assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
+//apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
+
+
+import java.util.Properties
+
+pluginManagement {
+    // 讀 local.properties 裡 flutter.sdk 並把 flutter_tools 加入 includeBuild
+    def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
+    def properties = new Properties()
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
+    }
+    def flutterSdkPath = properties.getProperty("flutter.sdk")
+    if (flutterSdkPath == null) {
+        throw new GradleException("flutter.sdk not set in local.properties")
+    }
+
+    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
+
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    // Flutter plugin loader（宣告式）
+    id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+
+    // AGP / Kotlin 版本宣告（apply false）
+    // 若你有指定不同版本，可把下面版本替換成你的版本號
+    id "com.android.application" version "8.6.0" apply false
+    id "org.jetbrains.kotlin.android" version "1.8.22" apply false
+}
+
+rootProject.name = "timegrid"
+include ":app"
