@@ -32,7 +32,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
-  int _selectedIndex = 0; // For bottom navigation bar
+  int _selectedIndex = 0;
 
   void _incrementCounter() => setState(() => _counter++);
 
@@ -45,8 +45,8 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
         actions: [
           IconButton(
-            icon: const Icon(FontAwesomeIcons.arrowsRotate, size: 18.0), // Adjust size as needed
-            onPressed: () {}, // Add your search functionality here
+            icon: const Icon(FontAwesomeIcons.arrowsRotate, size: 18.0),
+            onPressed: () {}, // TODO: switch the schedules
           )
         ],
       ),
@@ -54,8 +54,8 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: cs.primary,
         onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add, size: 30,),
+        tooltip: 'Edit Mode',
+        child: const Icon(Icons.edit, size: 30),
       ),
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {

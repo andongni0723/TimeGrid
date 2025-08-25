@@ -12,6 +12,8 @@ const Color _cSecondaryContainer = Color(0xFF2B2E3A);
 const Color _cOutline = Color(0xFF2B2E3A);
 const Color _cSurfaceTint = Color(0xFF8080FF);
 
+const Color primaryColor = _cPrimary;
+
 ColorScheme darkColorScheme = const ColorScheme(
   brightness: Brightness.dark,
 
