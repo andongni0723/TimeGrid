@@ -31,10 +31,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
   int _selectedIndex = 0;
+  bool _editMode = false;
 
-  void _incrementCounter() => setState(() => _counter++);
+  void _switchEditMode() => setState(() => _editMode = !_editMode);
 
   @override
   Widget build(BuildContext context) {
@@ -50,12 +50,21 @@ class _MyHomePageState extends State<MyHomePage> {
           )
         ],
       ),
-      body: const ScheduleBody(),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(child: ScheduleBody(isEditMode: _editMode)),
+            const SizedBox(height: 50)
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: cs.primary,
-        onPressed: _incrementCounter,
+        backgroundColor: _editMode ? cs.secondary : cs.primary,
+        onPressed: _switchEditMode,
         tooltip: 'Edit Mode',
-        child: const Icon(Icons.edit, size: 30),
+        child: _editMode
+            ? const Icon(FontAwesomeIcons.check, size: 30)
+            : const Icon(Icons.edit, size: 30),
       ),
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {

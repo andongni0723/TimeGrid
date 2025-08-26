@@ -103,6 +103,8 @@ class CourseCard extends StatelessWidget {
     const double roomMaxFont = 11.0;
     const double roomMinFont = 8.0;
 
+    const double handleHitHeight = 40.0;
+
     final textDir = Directionality.of(context);
     final titleBase = DefaultTextStyle.of(context).style.copyWith(
       color: Colors.white,
@@ -170,14 +172,14 @@ class CourseCard extends StatelessWidget {
           text: course.room,
           style: roomBase.copyWith(fontSize: finalRoomFont),
           maxWidth: availW,
-          maxLines: 2,
+          maxLines: 1,
           textDirection: textDir,
         );
         final totalWrapH = titleH_wrap + innerSpacing + roomH_wrap;
         allowWrap = totalWrapH <= contentAvailH + 0.001;
       }
 
-      return Container(
+      final cardCore = Container(
         constraints: BoxConstraints.tightFor(width: constraints.maxWidth, height: constraints.maxHeight),
         decoration: BoxDecoration(
           color: course.color,
@@ -189,18 +191,12 @@ class CourseCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (editMode)
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onVerticalDragUpdate: onTopHandleDragUpdate == null ? null : (d) => onTopHandleDragUpdate!(d.delta.dy),
-                onVerticalDragEnd: onTopHandleDragEnd == null ? null : (_) => onTopHandleDragEnd!(),
-                child: Align(
-                  alignment: Alignment.center,
-                  child: _horizontalLine(40, lineHeight),
-                ),
-              )
-            else
-              const SizedBox(height: lineHeight),
+              Align(
+                alignment: Alignment.center,
+                child: _horizontalLine(40, lineHeight),
+              ),
 
+            // Course Title & Room
             Expanded(
               child: Center(
                 child: ConstrainedBox(
@@ -216,12 +212,13 @@ class CourseCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: innerSpacing),
-                      Text(
-                        course.room,
-                        style: roomBase.copyWith(fontSize: useSingleLine ? roomFontSingle : finalRoomFont),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      if (!editMode)
+                        Text(
+                          course.room,
+                          style: roomBase.copyWith(fontSize: useSingleLine ? roomFontSingle : finalRoomFont),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                     ],
                   ),
                 ),
@@ -229,19 +226,56 @@ class CourseCard extends StatelessWidget {
             ),
 
             if (editMode)
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onVerticalDragUpdate: onBottomHandleDragUpdate == null ? null : (d) => onBottomHandleDragUpdate!(d.delta.dy),
-                onVerticalDragEnd: onBottomHandleDragEnd == null ? null : (_) => onBottomHandleDragEnd!(),
-                child: Align(
-                  alignment: Alignment.center,
-                  child: _horizontalLine(40, lineHeight),
-                ),
+              Align(
+                alignment: Alignment.center,
+                child: _horizontalLine(40, lineHeight),
               )
-            else
-              const SizedBox(height: lineHeight),
           ],
         ),
+      );
+
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          cardCore,
+          if (editMode)
+            Positioned(
+              top: 0, left: 0, right: 0, height:handleHitHeight,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onVerticalDragStart: (_) {
+                  debugPrint('[CourseCard: ${course.id}] onTopHandleDragStart');
+                },
+                onVerticalDragUpdate: (d) {
+                  debugPrint('[CourseCard: ${course.id}] onTopHandleDragUpdate: ${d.delta.dy}');
+                  if (onTopHandleDragUpdate != null) onTopHandleDragUpdate!(d.delta.dy);
+                },
+                onVerticalDragEnd: (_) {
+                  debugPrint('[CourseCard:${course.id}] TOP handle drag END');
+                  if (onTopHandleDragEnd != null) onTopHandleDragEnd!();
+                },
+              ),
+            ),
+
+          if (editMode)
+            Positioned(
+              bottom: 0, left: 0, right: 0, height:handleHitHeight,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onVerticalDragStart: (_) {
+                  debugPrint('[CourseCard: ${course.id}] onBottomHandleDragStart');
+                },
+                onVerticalDragUpdate: onBottomHandleDragUpdate == null ? null : (d) => {
+                  debugPrint('[CourseCard: ${course.id}] onBottomHandleDragUpdate: ${d.delta.dy}'),
+                  onBottomHandleDragUpdate!(d.delta.dy)
+                },
+                onVerticalDragEnd: (_) {
+                  debugPrint('[CourseCard:${course.id}] Bottom handle drag END');
+                  if (onBottomHandleDragEnd != null) onBottomHandleDragEnd!();
+                },
+              ),
+            ),
+        ],
       );
     });
   }
