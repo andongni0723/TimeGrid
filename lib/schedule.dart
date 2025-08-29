@@ -18,11 +18,9 @@ class ScheduleBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-      // child: Center(child: ScheduleGrid(editMode: isEditMode)),
-      child: ScheduleGrid(editMode: isEditMode),
-
-    );
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+        // child: Center(child: ScheduleGrid(editMode: isEditMode)),
+        child: ScheduleGrid(editMode: isEditMode));
   }
 }
 
@@ -40,7 +38,7 @@ class ScheduleGrid extends StatefulWidget {
   const ScheduleGrid({
     Key? key,
     this.days = 5,
-    this.rows = 15,
+    this.rows = 13,
     this.rowHeight = 60.0,
     this.dayHeaderHeight = 48.0,
     this.timeLabelWidth = 56.0,
@@ -52,6 +50,73 @@ class ScheduleGrid extends StatefulWidget {
 
   @override
   State<ScheduleGrid> createState() => _ScheduleGridState();
+
+  Future<CourseModel?> _openEditCourseModal(BuildContext ctx, CourseModel course) {
+    final formKey = GlobalKey<FormState>();
+    final titleController = TextEditingController(text: course.title);
+    final roomController = TextEditingController(text: course.room);
+    Color picked = course.color;
+
+    return showModalBottomSheet<CourseModel>(
+      context: ctx,
+      backgroundColor: Theme.of(ctx).colorScheme.surfaceContainer,
+      builder: (context) {
+        return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: StatefulBuilder(builder: (context, setState) {
+              return SafeArea(
+                  child: SingleChildScrollView(
+                      child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            spacing: 12,
+                            children: [
+                              Text('Edit Course', style: Theme.of(context).textTheme.titleLarge),
+                              Form(
+                                key: formKey,
+                                child: Column(spacing: 8, children: [
+                                  TextFormField(
+                                    controller: titleController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Course Name',
+                                    ),
+                                  ),
+                                  TextFormField(
+                                    controller: roomController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Room',
+                                    ),
+                                  )
+                                ]),
+                              ),
+                              Row(
+                                spacing: 12,
+                                children: [
+                                  Expanded(
+                                      child: FilledButton.tonal(
+                                          onPressed: () => Navigator.pop(context), child: const Text('Cancel'))),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                        child: const Text('Save'),
+                                        onPressed: () {
+                                          final updated = course.copyWith(
+                                            title: titleController.text.trim(),
+                                            room: roomController.text.trim(),
+                                            color: picked,
+                                          );
+                                          Navigator.pop(context, updated);
+                                        }),
+                                  )
+                                ],
+                              )
+                            ],
+                          ))));
+            }));
+      },
+    );
+  }
 }
 
 class _ScheduleGridState extends State<ScheduleGrid> {
@@ -61,7 +126,9 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   final ScrollController _scrollController = ScrollController();
 
   String _keyFor(int row, int day) => '$row,$day';
+
   CourseModel? _getCourseAt(int row, int day) => _occupiedMap[_keyFor(row, day)];
+
   bool _isHeadCell(int row, int day, CourseModel c) => c.row == row && c.day == day;
 
   // === Overlay（即時拖拉/移動的視覺） ===
@@ -70,6 +137,10 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   double _overlayDragAccDy = 0.0;
   double? _overlayStartTop;
   double? _overlayStartHeight;
+
+  void _debugPrintMap() {
+    debugPrint(_occupiedMap.toString());
+  }
 
   // 新增一堂示範課
   void _addAt(int row, int day) {
@@ -84,12 +155,14 @@ class _ScheduleGridState extends State<ScheduleGrid> {
       duration: 1,
     );
     setState(() => _placeCourse(c));
+    _debugPrintMap();
   }
 
   void _placeCourse(CourseModel c) {
     for (int r = c.row; r < c.row + c.duration; r++) {
       _occupiedMap[_keyFor(r, c.day)] = c;
     }
+    _debugPrintMap();
   }
 
   void _clearCourse(CourseModel c) {
@@ -123,9 +196,9 @@ class _ScheduleGridState extends State<ScheduleGrid> {
       _clearCourse(c);
       _placeCourse(c.copyWith(row: toRow, day: toDay));
     });
+    _debugPrintMap();
     return true;
   }
-
 
   // ====== Overlay 工具 ======
   ActiveOverlay _overlayFromCourse({
@@ -150,15 +223,14 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   void _startOverlayIfNeeded(CourseModel c, double dayWidth, double rowHeight, double hGap, double vGap) {
     final newOverlay = _overlayFromCourse(c: c, dayWidth: dayWidth, rowHeight: rowHeight, hGap: hGap, vGap: vGap);
 
-    if(_active == null || _active!.id != c.id) {
+    if (_active == null || _active!.id != c.id) {
       setState(() {
         _active = newOverlay;
         _overlayStartTop = newOverlay.top;
         _overlayStartHeight = newOverlay.height;
         _overlayDragAccDy = 0.0;
       });
-    }
-    else {
+    } else {
       _overlayStartTop = _active!.top;
       _overlayStartHeight = _active!.height;
       _overlayDragAccDy = 0.0;
@@ -325,98 +397,141 @@ class _ScheduleGridState extends State<ScheduleGrid> {
         final course = _getCourseAt(r, d);
         final occupied = course != null;
         final isHead = occupied && _isHeadCell(r, d, course);
-
         // 當該課程正被 overlay 預覽時，head cell 不再畫實體卡（避免底下重疊）；畫透明佔位即可
         final hideHeadBecauseOverlay = _active != null && occupied && isHead && _active!.id == course.id;
+        final cellHeight =
+            course == null || !isHead ? widget.rowHeight : (course.duration * widget.rowHeight) - 2 * widget.cellVGap;
 
-        return SizedBox(
-          width: dayWidth,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: widget.cellHGap, vertical: widget.cellVGap),
-            child: DragTarget<DragPayload>(
-              onWillAcceptWithDetails: (details) {
-                final c = _findById(details.data.courseId);
-                if (c == null) return false;
-                return _canPlace(row: r, day: d, duration: c.duration, ignoreId: c.id);
-              },
-              onAcceptWithDetails: (details) {
-                _moveCourse(details.data.courseId, r, d);
-              },
-              builder: (context, candidate, rejected) {
-                final highlight = candidate.isNotEmpty;
+        if (!widget.editMode && isHead) {
+          debugPrint(course.toString());
+        }
 
-                // 正常情況：在 head cell 畫 CourseCard（非 overlay 的版本）
-                if (isHead) {
-                  return CourseCard(
-                    course: course,
-                    editMode: widget.editMode,
-                    draggable: true, // 非 overlay 時使用 Draggable
-                    onTopHandleDragUpdate: (dy) =>
-                        _handleEdgeDrag(isTop: true, course: course, dy: dy, dayWidth: dayWidth),
-                    onBottomHandleDragUpdate: (dy) =>
-                        _handleEdgeDrag(isTop: false, course: course, dy: dy, dayWidth: dayWidth),
-                    onTopHandleDragEnd: () {
-                      _commitOverlay(dayWidth: dayWidth, rowHeight: widget.rowHeight);
-                    },
-                    onBottomHandleDragEnd: () {
-                      _commitOverlay(dayWidth: dayWidth, rowHeight: widget.rowHeight);
-                    },
-                  );
-                }
-
-                // //FIXME: course card expand logic has been removed, the code has not activated.
-                if (hideHeadBecauseOverlay) {
-                  return AbsorbPointer(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: cs.primary.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  );
-                }
-
-                if (occupied) {
-                  // 同課程的其它格：透明佔位
-                  return AbsorbPointer(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: course.color,
-                        // color: cs.primary.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  );
-                }
-
-                // 空格：虛線框 + 被拖到時高亮
-                return GestureDetector(
-                  onTap: () {
-                    if (!occupied && widget.editMode) _addAt(r, d);
+        return Stack(clipBehavior: Clip.none, children: [
+          SizedBox(
+              width: dayWidth,
+              height: widget.rowHeight,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: widget.cellHGap, vertical: widget.cellVGap),
+                child: DragTarget<DragPayload>(
+                  onWillAcceptWithDetails: (details) {
+                    final c = _findById(details.data.courseId);
+                    if (c == null) return false;
+                    return _canPlace(row: r, day: d, duration: c.duration, ignoreId: c.id);
                   },
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      _EmptyCell(
+                  onAcceptWithDetails: (details) {
+                    _moveCourse(details.data.courseId, r, d);
+                  },
+                  builder: (context, candidate, rejected) {
+                    final highlight = candidate.isNotEmpty;
+
+                    // In normal mode, draw a space
+                    if (!widget.editMode) {
+                      if (isHead || occupied) return const SizedBox();
+                      return _EmptyCell(
                         borderColor: cs.onSurface.withValues(alpha: 0.25),
                         radius: 8,
                         dashWidth: 6,
                         dashGap: 4,
-                      ),
-                      if (highlight)
-                        Container(
+                      );
+                    }
+
+                    // The cell is class head
+                    if (isHead) {
+                      return CourseCard(
+                        course: course,
+                        editMode: widget.editMode,
+                        draggable: true,
+                        // 非 overlay 時使用 Draggable
+                        onTap: () async {
+                          final updated = await widget._openEditCourseModal(context, course);
+                          if (updated == null) return;
+                          final newCourse = course.copyWith(
+                            title: updated.title,
+                            room: updated.room,
+                            color: updated.color,
+                          );
+                          setState(() {
+                            _clearCourse(course);
+                            _placeCourse(newCourse);
+                          });
+                        },
+                        onTopHandleDragUpdate: (dy) =>
+                            _handleEdgeDrag(isTop: true, course: course, dy: dy, dayWidth: dayWidth),
+                        onBottomHandleDragUpdate: (dy) =>
+                            _handleEdgeDrag(isTop: false, course: course, dy: dy, dayWidth: dayWidth),
+                        onTopHandleDragEnd: () {
+                          _commitOverlay(dayWidth: dayWidth, rowHeight: widget.rowHeight);
+                        },
+                        onBottomHandleDragEnd: () {
+                          _commitOverlay(dayWidth: dayWidth, rowHeight: widget.rowHeight);
+                        },
+                      );
+                    }
+
+                    // This grid is the other time of the course above.
+                    if (occupied) {
+                      return AbsorbPointer(
+                        child: Container(
                           decoration: BoxDecoration(
-                            color: cs.primary.withValues(alpha: 0.4),
+                            color: course.color,
+                            // color: cs.primary.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        );
+                      );
+                    }
+
+                    // //FIXME: course card expand logic has been removed, the code has not activated.
+                    // if (hideHeadBecauseOverlay) {
+                    //   return AbsorbPointer(
+                    //     child: Container(
+                    //       decoration: BoxDecoration(
+                    //         color: cs.primary.withValues(alpha: 0.06),
+                    //         borderRadius: BorderRadius.circular(8),
+                    //       ),
+                    //     ),
+                    //   );
+                    // }
+
+                    // Empty cell
+                    return GestureDetector(
+                      onTap: () {
+                        if (!occupied && widget.editMode) _addAt(r, d);
+                      },
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _EmptyCell(
+                            borderColor: cs.onSurface.withValues(alpha: 0.25),
+                            radius: 8,
+                            dashWidth: 6,
+                            dashGap: 4,
+                          ),
+                          if (highlight)
+                            Container(
+                              decoration: BoxDecoration(
+                                color: cs.primary.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              )),
+          if (!widget.editMode && isHead)
+            Positioned(
+              top: 0,
+              left: 0,
+              width: dayWidth,
+              height: course.duration * widget.rowHeight,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: widget.cellHGap, vertical: widget.cellVGap),
+                child: CourseCard(course: course, draggable: false, editMode: false),
+              ),
+            )
+        ]);
       }
 
       // 右側區：底層格線 + overlay 疊在最上層
@@ -429,7 +544,6 @@ class _ScheduleGridState extends State<ScheduleGrid> {
               Column(
                 children: List.generate(widget.rows, (r) {
                   return SizedBox(
-                    height: widget.rowHeight,
                     child: Row(
                       children: List.generate(widget.days, (d) => buildCell(r, d)),
                     ),
@@ -451,9 +565,8 @@ class _ScheduleGridState extends State<ScheduleGrid> {
                       setState(() {
                         final moved = _active!.moveBy(dx: d.delta.dx, dy: d.delta.dy);
                         _active = moved.copyWith(
-                          left: moved.left.clamp(0.0, rightWidth - moved.width),
-                          top: moved.top.clamp(0.0, totalHeight - moved.height)
-                        );
+                            left: moved.left.clamp(0.0, rightWidth - moved.width),
+                            top: moved.top.clamp(0.0, totalHeight - moved.height));
                       });
                     },
                     onPanEnd: (_) {
@@ -471,7 +584,7 @@ class _ScheduleGridState extends State<ScheduleGrid> {
           ),
         );
       }
-      
+
       final visibleHeight = math.min(totalHeight, constraints.maxHeight);
 
       return SizedBox(

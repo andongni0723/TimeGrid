@@ -10,11 +10,8 @@ class DragPayload {
 class CourseCard extends StatelessWidget {
   final CourseModel course;
   final bool editMode;
-
-  /// 是否要用 LongPressDraggable 包起來。
-  /// 放在 overlay（Positioned）時請設為 false，讓移動交由外層 GestureDetector 處理。
   final bool draggable;
-
+  final VoidCallback? onTap;
   // 上/下 handle 的拖動回呼（把 dy 回傳給外層）
   final void Function(double dy)? onTopHandleDragUpdate;
   final VoidCallback? onTopHandleDragEnd;
@@ -26,6 +23,7 @@ class CourseCard extends StatelessWidget {
     required this.course,
     this.editMode = true,
     this.draggable = true,
+    this.onTap,
     this.onTopHandleDragUpdate,
     this.onTopHandleDragEnd,
     this.onBottomHandleDragUpdate,
@@ -100,8 +98,11 @@ class CourseCard extends StatelessWidget {
 
     const double titleMaxFont = 13.0;
     const double titleMinFont = 9.0;
-    const double roomMaxFont = 11.0;
+    const double roomMaxFont = 10.0;
     const double roomMinFont = 8.0;
+
+    const int titleMaxLine = 2;
+    const int roomMaxLine = 2;
 
     const double handleHitHeight = 40.0;
 
@@ -136,47 +137,45 @@ class CourseCard extends StatelessWidget {
         textDirection: textDir,
       );
 
-      final titleH_single = _measureHeight(
+      final titleHeightSingle = _measureHeight(
         text: course.title,
         style: titleBase.copyWith(fontSize: titleFontSingle),
         maxWidth: availW,
-        maxLines: 2,
+        maxLines: titleMaxLine,
         textDirection: textDir,
       );
-      final roomH_single = _measureHeight(
+      final roomHeightSingle = _measureHeight(
         text: course.room,
         style: roomBase.copyWith(fontSize: roomFontSingle),
         maxWidth: availW,
-        maxLines: 2,
+        maxLines: roomMaxLine,
         textDirection: textDir,
       );
-      final totalSingleHeight = titleH_single + innerSpacing + roomH_single;
+      final totalSingleHeight = titleHeightSingle + innerSpacing + roomHeightSingle;
 
       bool useSingleLine = totalSingleHeight <= contentAvailH + 0.001;
 
-      bool allowWrap = false;
       double finalTitleFont = titleFontSingle;
       double finalRoomFont = roomFontSingle;
       if (!useSingleLine) {
         finalTitleFont = titleMinFont;
         finalRoomFont = roomMinFont;
 
-        final titleH_wrap = _measureHeight(
+        final titleHeightWrap = _measureHeight(
           text: course.title,
           style: titleBase.copyWith(fontSize: finalTitleFont),
           maxWidth: availW,
-          maxLines: 2,
+          maxLines: titleMaxLine,
           textDirection: textDir,
         );
-        final roomH_wrap = _measureHeight(
+        final roomHeightWrap = _measureHeight(
           text: course.room,
           style: roomBase.copyWith(fontSize: finalRoomFont),
           maxWidth: availW,
-          maxLines: 1,
+          maxLines: roomMaxLine,
           textDirection: textDir,
         );
-        final totalWrapH = titleH_wrap + innerSpacing + roomH_wrap;
-        allowWrap = totalWrapH <= contentAvailH + 0.001;
+        final totalWrapH = titleHeightWrap + innerSpacing + roomHeightWrap;
       }
 
       final cardCore = Container(
@@ -208,7 +207,7 @@ class CourseCard extends StatelessWidget {
                       Text(
                         course.title,
                         style: titleBase.copyWith(fontSize: useSingleLine ? titleFontSingle : finalTitleFont),
-                        maxLines: 2,
+                        maxLines: titleMaxLine,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: innerSpacing),
@@ -216,7 +215,7 @@ class CourseCard extends StatelessWidget {
                         Text(
                           course.room,
                           style: roomBase.copyWith(fontSize: useSingleLine ? roomFontSingle : finalRoomFont),
-                          maxLines: 1,
+                          maxLines: roomMaxLine,
                           overflow: TextOverflow.ellipsis,
                         ),
                     ],
@@ -244,14 +243,11 @@ class CourseCard extends StatelessWidget {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onVerticalDragStart: (_) {
-                  debugPrint('[CourseCard: ${course.id}] onTopHandleDragStart');
                 },
                 onVerticalDragUpdate: (d) {
-                  debugPrint('[CourseCard: ${course.id}] onTopHandleDragUpdate: ${d.delta.dy}');
                   if (onTopHandleDragUpdate != null) onTopHandleDragUpdate!(d.delta.dy);
                 },
                 onVerticalDragEnd: (_) {
-                  debugPrint('[CourseCard:${course.id}] TOP handle drag END');
                   if (onTopHandleDragEnd != null) onTopHandleDragEnd!();
                 },
               ),
@@ -263,14 +259,11 @@ class CourseCard extends StatelessWidget {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onVerticalDragStart: (_) {
-                  debugPrint('[CourseCard: ${course.id}] onBottomHandleDragStart');
                 },
-                onVerticalDragUpdate: onBottomHandleDragUpdate == null ? null : (d) => {
-                  debugPrint('[CourseCard: ${course.id}] onBottomHandleDragUpdate: ${d.delta.dy}'),
-                  onBottomHandleDragUpdate!(d.delta.dy)
+                onVerticalDragUpdate: (d) {
+                  if(onBottomHandleDragUpdate != null) onBottomHandleDragUpdate!(d.delta.dy);
                 },
                 onVerticalDragEnd: (_) {
-                  debugPrint('[CourseCard:${course.id}] Bottom handle drag END');
                   if (onBottomHandleDragEnd != null) onBottomHandleDragEnd!();
                 },
               ),
@@ -296,7 +289,7 @@ class CourseCard extends StatelessWidget {
         child: SizedBox(width: 120, height: 64, child: body),
       ),
       childWhenDragging: Opacity(opacity: 0.25, child: body),
-      child: body,
+      child: GestureDetector(onTap: onTap, child: body),
     );
   }
 }
