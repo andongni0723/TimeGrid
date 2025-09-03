@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/adapters.dart';
+import 'package:timegrid/models/course_model.dart';
 import 'package:timegrid/schedule.dart';
 import 'package:timegrid/theme/Theme.dart'; // 你的 color scheme 檔
 
-void main() => runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+
+  Hive.registerAdapter(CourseModelAdapter());
+  await Hive.openBox<CourseModel>('courses_box');
+
+  runApp(const ProviderScope(child: MyApp()));
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -42,11 +54,44 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: cs.surface,
+        leading: IconButton(
+          icon: const Icon(FontAwesomeIcons.arrowsRotate, size: 18.0),
+          style: IconButton.styleFrom(
+            backgroundColor: cs.secondaryContainer
+          ),
+          onPressed: () {}, // TODO: switch the schedules
+        ),
         title: Text(widget.title),
         actions: [
-          IconButton(
-            icon: const Icon(FontAwesomeIcons.arrowsRotate, size: 18.0),
-            onPressed: () {}, // TODO: switch the schedules
+          MenuAnchor(
+            builder: (BuildContext context, MenuController controller, Widget? child) {
+              return IconButton(
+                icon: const Icon(FontAwesomeIcons.ellipsisVertical, size: 20.0),
+                onPressed: () {
+                  controller.open();
+                },
+              );
+            },
+            menuChildren: [
+              MenuItemButton(
+                leadingIcon: const Icon(FontAwesomeIcons.download, size: 18.0),
+                style: MenuItemButton.styleFrom(backgroundColor: cs.surfaceContainerHighest),
+                child: const Text('Export to file (.json)'),
+                onPressed: () {
+                  MenuController.maybeOf(context)?.close();
+                  //TODO: export to json
+                },
+              ),
+              MenuItemButton(
+                leadingIcon: const Icon(FontAwesomeIcons.upload, size: 18.0),
+                style: MenuItemButton.styleFrom(backgroundColor: cs.surfaceContainerHighest),
+                child: const Text('Import to file (.json)'),
+                onPressed: () {
+                  MenuController.maybeOf(context)?.close();
+                  //TODO: export to json
+                },
+              )
+            ]
           )
         ],
       ),

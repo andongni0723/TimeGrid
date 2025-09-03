@@ -97,11 +97,11 @@ class CourseCard extends StatelessWidget {
     const double lineHeight = 6.0;
 
     const double titleMaxFont = 13.0;
-    const double titleMinFont = 9.0;
+    const double titleMinFont = 10.0;
     const double roomMaxFont = 10.0;
     const double roomMinFont = 8.0;
 
-    const int titleMaxLine = 2;
+    final int titleMaxLine = editMode ? 2 : course.duration + 1;
     const int roomMaxLine = 2;
 
     const double handleHitHeight = 40.0;

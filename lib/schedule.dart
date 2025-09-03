@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:timegrid/models/course_model.dart';
 import 'dart:math' as math;
 
@@ -19,7 +20,6 @@ class ScheduleBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-        // child: Center(child: ScheduleGrid(editMode: isEditMode)),
         child: ScheduleGrid(editMode: isEditMode));
   }
 }
@@ -120,8 +120,9 @@ class ScheduleGrid extends StatefulWidget {
 }
 
 class _ScheduleGridState extends State<ScheduleGrid> {
-  // cell -> course
-  final Map<String, CourseModel> _occupiedMap = {};
+  bool _isLoadingFromHive = false;
+
+  final Map<String, CourseModel> _occupiedMap = {}; // cell -> course
 
   final ScrollController _scrollController = ScrollController();
 
@@ -131,6 +132,41 @@ class _ScheduleGridState extends State<ScheduleGrid> {
 
   bool _isHeadCell(int row, int day, CourseModel c) => c.row == row && c.day == day;
 
+  Future<void> _saveSchedule() async {
+    try {
+      final box = Hive.box<CourseModel>('courses_box');
+      final unique = <String, CourseModel>{};
+      for (final c in _occupiedMap.values) {
+        unique[c.id] = c;
+      }
+      await box.putAll(unique);
+    } catch (e, st) {
+      debugPrint('Hive saveSchedule error: $e\n$st');
+    }
+  }
+
+  Future<void> _loadSchedule() async {
+    _isLoadingFromHive = true;
+    try {
+      final box = Hive.box<CourseModel>('courses_box');
+      _occupiedMap.clear();
+      for (final dynamic v in box.values) {
+        final CourseModel c = v as CourseModel;
+        _placeCourse(c);
+      }
+      setState(() {});
+    } catch (e, st) {
+      debugPrint('Hive loadSchedule error: $e\n$st');
+    } finally {
+      _isLoadingFromHive = false;
+    }
+  }
+
+  void _scheduleChanged() {
+    if (_isLoadingFromHive) return;
+    _saveSchedule();
+  }
+
   // === Overlay（即時拖拉/移動的視覺） ===
   ActiveOverlay? _active; // 為 null 代表沒有在預覽
 
@@ -138,11 +174,6 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   double? _overlayStartTop;
   double? _overlayStartHeight;
 
-  void _debugPrintMap() {
-    debugPrint(_occupiedMap.toString());
-  }
-
-  // 新增一堂示範課
   void _addAt(int row, int day) {
     final id = UniqueKey().toString();
     final c = CourseModel(
@@ -155,18 +186,19 @@ class _ScheduleGridState extends State<ScheduleGrid> {
       duration: 1,
     );
     setState(() => _placeCourse(c));
-    _debugPrintMap();
+    _scheduleChanged();
   }
 
   void _placeCourse(CourseModel c) {
     for (int r = c.row; r < c.row + c.duration; r++) {
       _occupiedMap[_keyFor(r, c.day)] = c;
     }
-    _debugPrintMap();
+    _scheduleChanged();
   }
 
   void _clearCourse(CourseModel c) {
     _occupiedMap.removeWhere((k, v) => v.id == c.id);
+    _scheduleChanged();
   }
 
   CourseModel? _findById(String id) {
@@ -196,7 +228,6 @@ class _ScheduleGridState extends State<ScheduleGrid> {
       _clearCourse(c);
       _placeCourse(c.copyWith(row: toRow, day: toDay));
     });
-    _debugPrintMap();
     return true;
   }
 
@@ -310,6 +341,12 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadSchedule();
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
@@ -401,10 +438,6 @@ class _ScheduleGridState extends State<ScheduleGrid> {
         final hideHeadBecauseOverlay = _active != null && occupied && isHead && _active!.id == course.id;
         final cellHeight =
             course == null || !isHead ? widget.rowHeight : (course.duration * widget.rowHeight) - 2 * widget.cellVGap;
-
-        if (!widget.editMode && isHead) {
-          debugPrint(course.toString());
-        }
 
         return Stack(clipBehavior: Clip.none, children: [
           SizedBox(
