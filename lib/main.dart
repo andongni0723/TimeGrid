@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'package:timegrid/models/course_chips_model.dart';
 import 'package:timegrid/models/course_model.dart';
 import 'package:timegrid/schedule.dart';
-import 'package:timegrid/theme/Theme.dart'; // 你的 color scheme 檔
+import 'package:timegrid/theme/Theme.dart';
+
+import 'components/file_io_json.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
   Hive.registerAdapter(CourseModelAdapter());
+  Hive.registerAdapter(CourseChipsModelAdapter());
+
   await Hive.openBox<CourseModel>('courses_box');
+  await Hive.openBox<CourseChipsModel>('chips_box');
 
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -79,16 +85,16 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: const Text('Export to file (.json)'),
                 onPressed: () {
                   MenuController.maybeOf(context)?.close();
-                  //TODO: export to json
+                  exportJsonToSystemShare(context);
                 },
               ),
               MenuItemButton(
                 leadingIcon: const Icon(FontAwesomeIcons.upload, size: 18.0),
                 style: MenuItemButton.styleFrom(backgroundColor: cs.surfaceContainerHighest),
-                child: const Text('Import to file (.json)'),
+                child: const Text('Import from file (.json)'),
                 onPressed: () {
                   MenuController.maybeOf(context)?.close();
-                  //TODO: export to json
+                  importJsonFromSystemFile(context);
                 },
               )
             ]

@@ -16,6 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$CourseChipsModel {
   String get id;
   String get title;
+  String get room;
   @ColorConverter()
   Color get color;
 
@@ -37,16 +38,17 @@ mixin _$CourseChipsModel {
             other is CourseChipsModel &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
+            (identical(other.room, room) || other.room == room) &&
             (identical(other.color, color) || other.color == color));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, title, color);
+  int get hashCode => Object.hash(runtimeType, id, title, room, color);
 
   @override
   String toString() {
-    return 'CourseChipsModel(id: $id, title: $title, color: $color)';
+    return 'CourseChipsModel(id: $id, title: $title, room: $room, color: $color)';
   }
 }
 
@@ -56,7 +58,8 @@ abstract mixin class $CourseChipsModelCopyWith<$Res> {
           CourseChipsModel value, $Res Function(CourseChipsModel) _then) =
       _$CourseChipsModelCopyWithImpl;
   @useResult
-  $Res call({String id, String title, @ColorConverter() Color color});
+  $Res call(
+      {String id, String title, String room, @ColorConverter() Color color});
 }
 
 /// @nodoc
@@ -74,6 +77,7 @@ class _$CourseChipsModelCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? title = null,
+    Object? room = null,
     Object? color = null,
   }) {
     return _then(_self.copyWith(
@@ -84,6 +88,10 @@ class _$CourseChipsModelCopyWithImpl<$Res>
       title: null == title
           ? _self.title
           : title // ignore: cast_nullable_to_non_nullable
+              as String,
+      room: null == room
+          ? _self.room
+          : room // ignore: cast_nullable_to_non_nullable
               as String,
       color: null == color
           ? _self.color
@@ -186,14 +194,15 @@ extension CourseChipsModelPatterns on CourseChipsModel {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(String id, String title, @ColorConverter() Color color)?
+    TResult Function(String id, String title, String room,
+            @ColorConverter() Color color)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _CourseChipsModel() when $default != null:
-        return $default(_that.id, _that.title, _that.color);
+        return $default(_that.id, _that.title, _that.room, _that.color);
       case _:
         return orElse();
     }
@@ -214,13 +223,14 @@ extension CourseChipsModelPatterns on CourseChipsModel {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(String id, String title, @ColorConverter() Color color)
+    TResult Function(
+            String id, String title, String room, @ColorConverter() Color color)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _CourseChipsModel():
-        return $default(_that.id, _that.title, _that.color);
+        return $default(_that.id, _that.title, _that.room, _that.color);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -240,13 +250,14 @@ extension CourseChipsModelPatterns on CourseChipsModel {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(String id, String title, @ColorConverter() Color color)?
+    TResult? Function(String id, String title, String room,
+            @ColorConverter() Color color)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _CourseChipsModel() when $default != null:
-        return $default(_that.id, _that.title, _that.color);
+        return $default(_that.id, _that.title, _that.room, _that.color);
       case _:
         return null;
     }
@@ -259,6 +270,7 @@ class _CourseChipsModel implements CourseChipsModel {
   const _CourseChipsModel(
       {required this.id,
       required this.title,
+      required this.room,
       @ColorConverter() required this.color});
   factory _CourseChipsModel.fromJson(Map<String, dynamic> json) =>
       _$CourseChipsModelFromJson(json);
@@ -267,6 +279,8 @@ class _CourseChipsModel implements CourseChipsModel {
   final String id;
   @override
   final String title;
+  @override
+  final String room;
   @override
   @ColorConverter()
   final Color color;
@@ -293,16 +307,17 @@ class _CourseChipsModel implements CourseChipsModel {
             other is _CourseChipsModel &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
+            (identical(other.room, room) || other.room == room) &&
             (identical(other.color, color) || other.color == color));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, title, color);
+  int get hashCode => Object.hash(runtimeType, id, title, room, color);
 
   @override
   String toString() {
-    return 'CourseChipsModel(id: $id, title: $title, color: $color)';
+    return 'CourseChipsModel(id: $id, title: $title, room: $room, color: $color)';
   }
 }
 
@@ -314,7 +329,8 @@ abstract mixin class _$CourseChipsModelCopyWith<$Res>
       __$CourseChipsModelCopyWithImpl;
   @override
   @useResult
-  $Res call({String id, String title, @ColorConverter() Color color});
+  $Res call(
+      {String id, String title, String room, @ColorConverter() Color color});
 }
 
 /// @nodoc
@@ -332,6 +348,7 @@ class __$CourseChipsModelCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? title = null,
+    Object? room = null,
     Object? color = null,
   }) {
     return _then(_CourseChipsModel(
@@ -342,6 +359,10 @@ class __$CourseChipsModelCopyWithImpl<$Res>
       title: null == title
           ? _self.title
           : title // ignore: cast_nullable_to_non_nullable
+              as String,
+      room: null == room
+          ? _self.room
+          : room // ignore: cast_nullable_to_non_nullable
               as String,
       color: null == color
           ? _self.color

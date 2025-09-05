@@ -10,6 +10,7 @@ _CourseChipsModel _$CourseChipsModelFromJson(Map<String, dynamic> json) =>
     _CourseChipsModel(
       id: json['id'] as String,
       title: json['title'] as String,
+      room: json['room'] as String,
       color: const ColorConverter().fromJson((json['color'] as num).toInt()),
     );
 
@@ -17,5 +18,6 @@ Map<String, dynamic> _$CourseChipsModelToJson(_CourseChipsModel instance) =>
     <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
+      'room': instance.room,
       'color': const ColorConverter().toJson(instance.color),
     };

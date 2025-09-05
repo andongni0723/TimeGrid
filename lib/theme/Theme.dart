@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart' show Brightness, Color, ColorScheme;
+import 'dart:io';
+
+import 'package:flutter/material.dart' show Brightness, Color, ColorScheme, Colors;
 
 const Color _cDarkOnBackground = Color(0xFFE6E6E6); // #E6E6E6
 const Color _cDarkSurface = Color(0xFF14161D);
@@ -90,3 +92,23 @@ ColorScheme lightColorScheme = const ColorScheme(
   tertiaryContainer: Color(0xFFEDE6FF),
   onTertiaryContainer: Color(0xFF14161D),
 );
+
+const List<Color> colorLibrary = [
+  Color(0xFF2E3A8C),
+  Color(0xFF006D5B),
+  Color(0xFF8A4B2A),
+  Color(0xFF4C5B21),
+  Color(0xFF6B1E3B),
+  Color(0xFF2D3741),
+  Color(0xFF8D6B2D),
+  Color(0xFF006B7B),
+  Color(0xFF5B2E5A),
+  Color(0xFF1F5D3D),
+  Color(0xFF6E3F2E),
+  Color(0xFF17224A),
+  Color(0xFF7A2F6E),
+  Color(0xFF5B3A2E),
+  Color(0xFF2A516B),
+  Color(0xFF106A43),
+  Color(0xFF3C2F5B),
+];

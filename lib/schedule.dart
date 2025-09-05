@@ -2,7 +2,10 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:timegrid/components/edit_course_bottom_sheet.dart';
+import 'package:timegrid/components/file_io_json.dart';
 import 'package:timegrid/models/course_model.dart';
+import 'package:timegrid/theme/Theme.dart';
 import 'dart:math' as math;
 
 import 'components/course_card.dart';
@@ -52,70 +55,7 @@ class ScheduleGrid extends StatefulWidget {
   State<ScheduleGrid> createState() => _ScheduleGridState();
 
   Future<CourseModel?> _openEditCourseModal(BuildContext ctx, CourseModel course) {
-    final formKey = GlobalKey<FormState>();
-    final titleController = TextEditingController(text: course.title);
-    final roomController = TextEditingController(text: course.room);
-    Color picked = course.color;
-
-    return showModalBottomSheet<CourseModel>(
-      context: ctx,
-      backgroundColor: Theme.of(ctx).colorScheme.surfaceContainer,
-      builder: (context) {
-        return Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: StatefulBuilder(builder: (context, setState) {
-              return SafeArea(
-                  child: SingleChildScrollView(
-                      child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            spacing: 12,
-                            children: [
-                              Text('Edit Course', style: Theme.of(context).textTheme.titleLarge),
-                              Form(
-                                key: formKey,
-                                child: Column(spacing: 8, children: [
-                                  TextFormField(
-                                    controller: titleController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Course Name',
-                                    ),
-                                  ),
-                                  TextFormField(
-                                    controller: roomController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Room',
-                                    ),
-                                  )
-                                ]),
-                              ),
-                              Row(
-                                spacing: 12,
-                                children: [
-                                  Expanded(
-                                      child: FilledButton.tonal(
-                                          onPressed: () => Navigator.pop(context), child: const Text('Cancel'))),
-                                  Expanded(
-                                    child: ElevatedButton(
-                                        child: const Text('Save'),
-                                        onPressed: () {
-                                          final updated = course.copyWith(
-                                            title: titleController.text.trim(),
-                                            room: roomController.text.trim(),
-                                            color: picked,
-                                          );
-                                          Navigator.pop(context, updated);
-                                        }),
-                                  )
-                                ],
-                              )
-                            ],
-                          ))));
-            }));
-      },
-    );
+    return editCourseBottomSheet(ctx, course);
   }
 }
 
@@ -178,9 +118,9 @@ class _ScheduleGridState extends State<ScheduleGrid> {
     final id = UniqueKey().toString();
     final c = CourseModel(
       id: id,
-      title: '自然科學與人工智慧導論',
+      title: 'New Course',
       room: 'R101',
-      color: Colors.primaries[(row + day) % Colors.primaries.length],
+      color: colorLibrary[(row + day) % colorLibrary.length],
       day: day,
       row: row,
       duration: 1,
@@ -344,11 +284,13 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   void initState() {
     super.initState();
     _loadSchedule();
+    importNotifier.addListener(_loadSchedule);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    importNotifier.removeListener(_loadSchedule);
     super.dispose();
   }
 
