@@ -40,11 +40,12 @@ Future<void> exportJsonToSystemShare(BuildContext context) async {
         text: 'TimeGrid export',
       )
     );
-
+    if(!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Export prepared: $filename'))
     );
   } catch (e) {
+    if(!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Export failed: $e'))
     );
@@ -61,7 +62,7 @@ Future<void> importJsonFromSystemFile(
       allowedExtensions: ['json'],
       withData: false,
     );
-
+    if (!context.mounted) return;
     if (result == null || result.files.isEmpty) return;
 
     final path = result.files.single.path;
@@ -82,11 +83,12 @@ Future<void> importJsonFromSystemFile(
     }
 
     importNotifier.value++;
-
+    if(!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Imported ${res['courses']} courses, ${res['chips']} chips')),
     );
   } catch (e) {
+    if(!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Import failed: $e')),
     );

@@ -5,9 +5,10 @@ import 'package:hive/hive.dart';
 
 import '../theme/Theme.dart';
 
-Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course) {
+Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course, VoidCallback? onDelete) {
   final formKey = GlobalKey<FormState>();
   final roomController = TextEditingController(text: course.room);
+  final cs = Theme.of(ctx).colorScheme;
 
   final box = Hive.box<CourseChipsModel>('chips_box');
   List<CourseChipsModel> chipsData = box.values.toList();
@@ -16,7 +17,7 @@ Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course)
 
   return showModalBottomSheet<CourseModel>(
     context: ctx,
-    backgroundColor: Theme.of(ctx).colorScheme.surfaceContainer,
+    backgroundColor: cs.surfaceContainer,
     builder: (context) {
       return Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -30,7 +31,22 @@ Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course)
                   mainAxisSize: MainAxisSize.min,
                   spacing: 12,
                   children: [
-                    Center(child: Text('Edit Course', style: Theme.of(context).textTheme.titleLarge)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Title
+                        Center(child: Text('Edit Course', style: Theme.of(context).textTheme.titleLarge)),
+
+                        // Delete Course Button
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            onDelete?.call();
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
                     Column(
                       mainAxisSize: MainAxisSize.max,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -40,32 +56,42 @@ Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course)
                           spacing: 8,
                           children: [
                             ...chipsData.asMap().entries.map((entry) {
-                              final idx = entry.key;
                               final data = entry.value;
+
+                              // Course Chips
                               return InputChip(
                                 label: Text(data.title),
                                 avatar: CircleAvatar(backgroundColor: data.color),
                                 selected: selectedChipId == data.id,
+                                side: selectedChipId == data.id
+                                  ? BorderSide(color: cs.primary, width: 2)
+                                  : BorderSide.none,
                                 onSelected: (bool selected) {
                                   setState(() {
                                     selectedChipId = selected ? data.id : null;
                                     roomController.text = data.room;
                                   });
                                 },
-                                deleteIcon: const Icon(
-                                  Icons.close,
-                                  size: 18,
-                                ),
+                                deleteIcon: const Icon(Icons.close, size: 18,),
                                 onDeleted: () async {
+                                  final bool? confirmed = await confirmDialog(
+                                      context,
+                                      "Delete Course Chip",
+                                      "Are you sure you want to delete this course chip?"
+                                  );
+                                  if (confirmed != true) return;
+
                                   final idToRemove = data.id;
                                   setState(() {
-                                    if (selectedChipId == idx) selectedChipId = null;
+                                    if (selectedChipId == data.id) selectedChipId = null;
                                     chipsData.removeWhere((c) => c.id == idToRemove);
                                   });
                                   await box.delete(idToRemove);
                                 },
                               );
                             }).toList(),
+
+                            // Add course chips button
                             IconButton.outlined(
                               icon: const Icon(Icons.add),
                               onPressed: () {
@@ -90,13 +116,19 @@ Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course)
                         )
                       ]),
                     ),
+
+                    // Bottom sheet actions buttons
                     Row(
                       spacing: 12,
                       children: [
+
+                        // Cancel Button
                         Expanded(
                           child:
                               FilledButton.tonal(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
                         ),
+
+                        // Save Button
                         Expanded(
                           child: FilledButton(
                             onPressed: selectedChipId == null
@@ -160,6 +192,8 @@ void openAddCourseChipDialog(
                         border: OutlineInputBorder(),
                       ),
                     ),
+
+                    // Color picker
                     Wrap(
                       spacing: 16,
                       runSpacing: 16,
@@ -196,6 +230,7 @@ void openAddCourseChipDialog(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
+            // Save Button
             FilledButton(
               onPressed: () {
                 final newChip = CourseChipsModel(
@@ -211,6 +246,28 @@ void openAddCourseChipDialog(
           ],
         );
       },
+    ),
+  );
+}
+
+Future<bool?> confirmDialog(
+  BuildContext ctx,
+  String title,
+  String content,
+) async {
+  return showDialog<bool>(
+    context: ctx,
+    builder: (ctx) => AlertDialog(
+      title: Text(title),
+      content: Text(content),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+        FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
+          child: const Text('Delete'),
+        ),
+      ],
     ),
   );
 }

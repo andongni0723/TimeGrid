@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:timegrid/components/edit_course_bottom_sheet.dart';
@@ -11,25 +9,54 @@ import 'dart:math' as math;
 import 'components/course_card.dart';
 import 'models/active_overlay.dart'; // 內含 DragPayload
 
+class ScheduleController extends ChangeNotifier {
+  int days;
+  int rows;
+
+  ScheduleController({this.days = 5, this.rows = 8});
+
+  void addDay() {
+    days = math.min(days + 1, 7);
+  }
+
+  void removeDay() {
+    days = math.max(days - 1, 5);
+    notifyListeners();
+  }
+
+  void addRow() {
+    rows += 1;
+    notifyListeners();
+  }
+
+  void removeRow() {
+    rows = math.max(rows - 1, 1);
+    notifyListeners();
+  }
+}
+
 class ScheduleBody extends StatelessWidget {
   final bool isEditMode;
+  final ScheduleController controller;
 
   const ScheduleBody({
     Key? key,
     this.isEditMode = true,
+    required this.controller,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-        child: ScheduleGrid(editMode: isEditMode));
+        child: ScheduleGrid(
+          editMode: isEditMode,
+          controller: controller,
+        ));
   }
 }
 
 class ScheduleGrid extends StatefulWidget {
-  final int days;
-  final int rows;
   final double rowHeight;
   final double dayHeaderHeight;
   final double timeLabelWidth;
@@ -37,11 +64,10 @@ class ScheduleGrid extends StatefulWidget {
   final double cellHGap;
   final double cellVGap;
   final bool editMode;
+  final ScheduleController controller;
 
   const ScheduleGrid({
     Key? key,
-    this.days = 5,
-    this.rows = 13,
     this.rowHeight = 60.0,
     this.dayHeaderHeight = 48.0,
     this.timeLabelWidth = 56.0,
@@ -49,13 +75,14 @@ class ScheduleGrid extends StatefulWidget {
     this.cellHGap = 3.0,
     this.cellVGap = 3.0,
     this.editMode = true,
+    required this.controller,
   }) : super(key: key);
 
   @override
   State<ScheduleGrid> createState() => _ScheduleGridState();
 
-  Future<CourseModel?> _openEditCourseModal(BuildContext ctx, CourseModel course) {
-    return editCourseBottomSheet(ctx, course);
+  Future<CourseModel?> _openEditCourseModal(BuildContext ctx, CourseModel course, VoidCallback? onDelete) {
+    return editCourseBottomSheet(ctx, course, onDelete);
   }
 }
 
@@ -107,7 +134,12 @@ class _ScheduleGridState extends State<ScheduleGrid> {
     _saveSchedule();
   }
 
-  // === Overlay（即時拖拉/移動的視覺） ===
+  void _onControllerChanged() {
+    setState(() {
+      debugPrint('ScheduleGrid: days=${widget.controller.days}, rows=${widget.controller.rows}');
+    });
+  }
+
   ActiveOverlay? _active; // 為 null 代表沒有在預覽
 
   double _overlayDragAccDy = 0.0;
@@ -150,8 +182,8 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   }
 
   bool _canPlace({required int row, required int day, required int duration, String? ignoreId}) {
-    if (day < 0 || day >= widget.days) return false;
-    if (row < 0 || row + duration > widget.rows) return false;
+    if (day < 0 || day >= widget.controller.days) return false;
+    if (row < 0 || row + duration > widget.controller.rows) return false;
     for (int r = row; r < row + duration; r++) {
       final exist = _occupiedMap[_keyFor(r, day)];
       if (exist != null && exist.id != ignoreId) return false;
@@ -216,10 +248,12 @@ class _ScheduleGridState extends State<ScheduleGrid> {
     final a = _active;
     if (a == null) return;
     // 換算到格線
-    final snappedDay = a.left < 0 ? 0 : ((a.left + dayWidth / 2) / dayWidth).floor().clamp(0, widget.days - 1);
-    final snappedRow = a.top < 0 ? 0 : ((a.top + rowHeight / 2) / rowHeight).floor().clamp(0, widget.rows - 1);
+    final snappedDay =
+        a.left < 0 ? 0 : ((a.left + dayWidth / 2) / dayWidth).floor().clamp(0, widget.controller.days - 1);
+    final snappedRow =
+        a.top < 0 ? 0 : ((a.top + rowHeight / 2) / rowHeight).floor().clamp(0, widget.controller.rows - 1);
     int snappedDur = math.max(1, ((a.height + rowHeight / 2) / rowHeight).floor());
-    if (snappedRow + snappedDur > widget.rows) snappedDur = widget.rows - snappedRow;
+    if (snappedRow + snappedDur > widget.controller.rows) snappedDur = widget.controller.rows - snappedRow;
 
     final c = _findById(a.id);
     if (c == null) {
@@ -263,7 +297,7 @@ class _ScheduleGridState extends State<ScheduleGrid> {
 
       final minH = widget.rowHeight - 2 * widget.cellVGap;
       final baseTop = _overlayStartTop ?? _active!.top;
-      final maxH = (widget.rows * widget.rowHeight) - baseTop;
+      final maxH = (widget.controller.rows * widget.rowHeight) - baseTop;
       final baseHeight = _overlayStartHeight ?? _active!.height;
 
       double newTop = baseTop;
@@ -285,27 +319,29 @@ class _ScheduleGridState extends State<ScheduleGrid> {
     super.initState();
     _loadSchedule();
     importNotifier.addListener(_loadSchedule);
+    widget.controller.addListener(_onControllerChanged);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     importNotifier.removeListener(_loadSchedule);
+    widget.controller.removeListener(_onControllerChanged);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     return LayoutBuilder(builder: (context, constraints) {
       final maxWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.of(context).size.width;
       final rightWidth = (maxWidth - widget.timeLabelWidth).clamp(0.0, maxWidth);
-      final dayWidth = widget.days > 0 ? rightWidth / widget.days : 0.0;
-      final totalHeight = widget.rows * widget.rowHeight;
+      final dayWidth = widget.controller.days > 0 ? rightWidth / widget.controller.days : 0.0;
+      final totalHeight = widget.controller.rows * widget.rowHeight;
 
-      // final timeSlots = List<String>.generate(widget.rows, (i) => 'Slot ${i + 1}');
+      // final timeSlots = List<String>.generate(widget.controller.rows, (i) => 'Slot ${i + 1}');
 
       // Header
       Widget header() {
@@ -318,7 +354,7 @@ class _ScheduleGridState extends State<ScheduleGrid> {
               SizedBox(
                 width: rightWidth,
                 child: Row(
-                  children: List.generate(widget.days, (d) {
+                  children: List.generate(widget.controller.days, (d) {
                     return SizedBox(
                       width: dayWidth,
                       child: Padding(
@@ -330,7 +366,7 @@ class _ScheduleGridState extends State<ScheduleGrid> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            d < dayNames.length ? dayNames[d] : 'Day ${d + 1}',
+                            dayNames[d],
                             style: TextStyle(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600),
                           ),
                         ),
@@ -346,27 +382,43 @@ class _ScheduleGridState extends State<ScheduleGrid> {
 
       // 左側時間欄
       Widget timeColumn() {
-        const slotNames = ['A', '1', '2', '3', '4', 'B', '5', '6', '7', '8', 'C', 'D', 'E', 'F', 'G'];
-        return SizedBox(
-          width: widget.timeLabelWidth,
-          child: Column(
-            children: List.generate(widget.rows, (r) {
-              return Padding(
-                padding: EdgeInsets.symmetric(vertical: widget.cellVGap, horizontal: widget.cellHGap),
-                child: Container(
-                  height: widget.rowHeight - (widget.cellVGap * 2),
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
+        List<String> slotNames = [];
+        return GestureDetector(
+          onTap: () async {
+            final TimeOfDay? picked = await showTimePicker(
+              context: context,
+              initialEntryMode: TimePickerEntryMode.input,
+              initialTime: const TimeOfDay(hour: 0, minute: 0),
+              builder: (BuildContext context, Widget? child) {
+                // 強制 24 小時制（覆寫當前 MediaQuery）
+                return MediaQuery(
+                  data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                  child: child!,
+                );
+              },
+            );
+          },
+          child: SizedBox(
+            width: widget.timeLabelWidth,
+            child: Column(
+              children: List.generate(widget.controller.rows, (r) {
+                return Padding(
+                  padding: EdgeInsets.symmetric(vertical: widget.cellVGap, horizontal: widget.cellHGap),
+                  child: Container(
+                    height: widget.rowHeight - (widget.cellVGap * 2),
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      r < slotNames.length ? slotNames[r] : (r+1).toString(),
+                      style: TextStyle(color: cs.onPrimaryContainer, fontSize: 16),
+                    ),
                   ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    r < slotNames.length ? slotNames[r] : 'Slot ${r + 1}',
-                    style: TextStyle(color: cs.onPrimaryContainer, fontSize: 16),
-                  ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
         );
       }
@@ -376,125 +428,127 @@ class _ScheduleGridState extends State<ScheduleGrid> {
         final course = _getCourseAt(r, d);
         final occupied = course != null;
         final isHead = occupied && _isHeadCell(r, d, course);
-        // 當該課程正被 overlay 預覽時，head cell 不再畫實體卡（避免底下重疊）；畫透明佔位即可
-        final hideHeadBecauseOverlay = _active != null && occupied && isHead && _active!.id == course.id;
-        final cellHeight =
-            course == null || !isHead ? widget.rowHeight : (course.duration * widget.rowHeight) - 2 * widget.cellVGap;
+
+        //FIXME: course card expand logic has been removed, the code has not activated.
+        // final hideHeadBecauseOverlay = _active != null && occupied && isHead && _active!.id == course.id;
 
         return Stack(clipBehavior: Clip.none, children: [
           SizedBox(
-              width: dayWidth,
-              height: widget.rowHeight,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: widget.cellHGap, vertical: widget.cellVGap),
-                child: DragTarget<DragPayload>(
-                  onWillAcceptWithDetails: (details) {
-                    final c = _findById(details.data.courseId);
-                    if (c == null) return false;
-                    return _canPlace(row: r, day: d, duration: c.duration, ignoreId: c.id);
-                  },
-                  onAcceptWithDetails: (details) {
-                    _moveCourse(details.data.courseId, r, d);
-                  },
-                  builder: (context, candidate, rejected) {
-                    final highlight = candidate.isNotEmpty;
+            width: dayWidth,
+            height: widget.rowHeight,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: widget.cellHGap, vertical: widget.cellVGap),
+              child: DragTarget<DragPayload>(
+                onWillAcceptWithDetails: (details) {
+                  final c = _findById(details.data.courseId);
+                  if (c == null) return false;
+                  return _canPlace(row: r, day: d, duration: c.duration, ignoreId: c.id);
+                },
+                onAcceptWithDetails: (details) {
+                  _moveCourse(details.data.courseId, r, d);
+                },
+                builder: (context, candidate, rejected) {
+                  final highlight = candidate.isNotEmpty;
 
-                    // In normal mode, draw a space
-                    if (!widget.editMode) {
-                      if (isHead || occupied) return const SizedBox();
-                      return _EmptyCell(
-                        borderColor: cs.onSurface.withValues(alpha: 0.25),
-                        radius: 8,
-                        dashWidth: 6,
-                        dashGap: 4,
-                      );
-                    }
+                  // In normal mode, draw a space
+                  if (!widget.editMode) {
+                    if (isHead || occupied) return const SizedBox();
+                    return _EmptyCell(
+                      borderColor: cs.onSurface.withValues(alpha: 0.25),
+                      radius: 8,
+                      dashWidth: 6,
+                      dashGap: 4,
+                    );
+                  }
 
-                    // The cell is class head
-                    if (isHead) {
-                      return CourseCard(
-                        course: course,
-                        editMode: widget.editMode,
-                        draggable: true,
-                        // 非 overlay 時使用 Draggable
-                        onTap: () async {
-                          final updated = await widget._openEditCourseModal(context, course);
-                          if (updated == null) return;
-                          final newCourse = course.copyWith(
-                            title: updated.title,
-                            room: updated.room,
-                            color: updated.color,
-                          );
-                          setState(() {
-                            _clearCourse(course);
-                            _placeCourse(newCourse);
-                          });
-                        },
-                        onTopHandleDragUpdate: (dy) =>
-                            _handleEdgeDrag(isTop: true, course: course, dy: dy, dayWidth: dayWidth),
-                        onBottomHandleDragUpdate: (dy) =>
-                            _handleEdgeDrag(isTop: false, course: course, dy: dy, dayWidth: dayWidth),
-                        onTopHandleDragEnd: () {
-                          _commitOverlay(dayWidth: dayWidth, rowHeight: widget.rowHeight);
-                        },
-                        onBottomHandleDragEnd: () {
-                          _commitOverlay(dayWidth: dayWidth, rowHeight: widget.rowHeight);
-                        },
-                      );
-                    }
+                  // The cell is class head
+                  if (isHead) {
+                    return CourseCard(
+                      course: course,
+                      editMode: widget.editMode,
+                      draggable: true,
+                      // 非 overlay 時使用 Draggable
+                      onTap: () async {
+                        final updated = await widget._openEditCourseModal(
+                            context, course, () => setState(() => _clearCourse(course)));
 
-                    // This grid is the other time of the course above.
-                    if (occupied) {
-                      return AbsorbPointer(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: course.color,
-                            // color: cs.primary.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      );
-                    }
-
-                    // //FIXME: course card expand logic has been removed, the code has not activated.
-                    // if (hideHeadBecauseOverlay) {
-                    //   return AbsorbPointer(
-                    //     child: Container(
-                    //       decoration: BoxDecoration(
-                    //         color: cs.primary.withValues(alpha: 0.06),
-                    //         borderRadius: BorderRadius.circular(8),
-                    //       ),
-                    //     ),
-                    //   );
-                    // }
-
-                    // Empty cell
-                    return GestureDetector(
-                      onTap: () {
-                        if (!occupied && widget.editMode) _addAt(r, d);
+                        if (updated == null) return;
+                        final newCourse = course.copyWith(
+                          title: updated.title,
+                          room: updated.room,
+                          color: updated.color,
+                        );
+                        setState(() {
+                          _clearCourse(course);
+                          _placeCourse(newCourse);
+                        });
                       },
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          _EmptyCell(
-                            borderColor: cs.onSurface.withValues(alpha: 0.25),
-                            radius: 8,
-                            dashWidth: 6,
-                            dashGap: 4,
-                          ),
-                          if (highlight)
-                            Container(
-                              decoration: BoxDecoration(
-                                color: cs.primary.withValues(alpha: 0.4),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                        ],
+                      onTopHandleDragUpdate: (dy) =>
+                          _handleEdgeDrag(isTop: true, course: course, dy: dy, dayWidth: dayWidth),
+                      onBottomHandleDragUpdate: (dy) =>
+                          _handleEdgeDrag(isTop: false, course: course, dy: dy, dayWidth: dayWidth),
+                      onTopHandleDragEnd: () {
+                        _commitOverlay(dayWidth: dayWidth, rowHeight: widget.rowHeight);
+                      },
+                      onBottomHandleDragEnd: () {
+                        _commitOverlay(dayWidth: dayWidth, rowHeight: widget.rowHeight);
+                      },
+                    );
+                  }
+
+                  // This grid is the other time of the course above.
+                  if (occupied) {
+                    return AbsorbPointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: course.color,
+                          // color: cs.primary.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     );
-                  },
-                ),
-              )),
+                  }
+
+                  // //FIXME: course card expand logic has been removed, the code has not activated.
+                  // if (hideHeadBecauseOverlay) {
+                  //   return AbsorbPointer(
+                  //     child: Container(
+                  //       decoration: BoxDecoration(
+                  //         color: cs.primary.withValues(alpha: 0.06),
+                  //         borderRadius: BorderRadius.circular(8),
+                  //       ),
+                  //     ),
+                  //   );
+                  // }
+
+                  // Empty cell
+                  return GestureDetector(
+                    onTap: () {
+                      if (!occupied && widget.editMode) _addAt(r, d);
+                    },
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _EmptyCell(
+                          borderColor: cs.onSurface.withValues(alpha: 0.25),
+                          radius: 8,
+                          dashWidth: 6,
+                          dashGap: 4,
+                        ),
+                        if (highlight)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: cs.primary.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
           if (!widget.editMode && isHead)
             Positioned(
               top: 0,
@@ -505,7 +559,7 @@ class _ScheduleGridState extends State<ScheduleGrid> {
                 padding: EdgeInsets.symmetric(horizontal: widget.cellHGap, vertical: widget.cellVGap),
                 child: CourseCard(course: course, draggable: false, editMode: false),
               ),
-            )
+            ),
         ]);
       }
 
@@ -517,10 +571,10 @@ class _ScheduleGridState extends State<ScheduleGrid> {
             children: [
               // 底層：格線（每列 row，裡面是每日 cell）
               Column(
-                children: List.generate(widget.rows, (r) {
+                children: List.generate(widget.controller.rows, (r) {
                   return SizedBox(
                     child: Row(
-                      children: List.generate(widget.days, (d) => buildCell(r, d)),
+                      children: List.generate(widget.controller.days, (d) => buildCell(r, d)),
                     ),
                   );
                 }),
@@ -579,6 +633,7 @@ class _ScheduleGridState extends State<ScheduleGrid> {
                   ],
                 ),
               ),
+              const SizedBox(height: 50),
             ],
           ),
         ),

@@ -9,6 +9,11 @@ android {
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
+    defaultConfig {
+        minSdkVersion flutter.minSdkVersion
+        targetSdkVersion flutter.targetSdkVersion
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -42,6 +47,4 @@ flutter {
 }
 
 dependencies {
-    // Kotlin stdlib 不需要手動加入（plugins DSL 會處理），
-    // 若你有需要額外依賴可以在這裡加入。
 }

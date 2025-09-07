@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -34,6 +33,11 @@ class MyApp extends StatelessWidget {
         colorScheme: darkColorScheme,
         fontFamily: 'Poppins',
         useMaterial3: true,
+        chipTheme: ChipThemeData(
+          backgroundColor: darkColorScheme.secondaryContainer,
+          selectedColor: Colors.transparent,
+          side: BorderSide.none,
+        ),
       ),
       home: const MyHomePage(title: 'Schedule Grade 1'),
     );
@@ -49,6 +53,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final ScheduleController _scheduleController = ScheduleController();
+
   int _selectedIndex = 0;
   bool _editMode = false;
 
@@ -61,10 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: cs.surface,
         leading: IconButton(
-          icon: const Icon(FontAwesomeIcons.arrowsRotate, size: 18.0),
-          style: IconButton.styleFrom(
-            backgroundColor: cs.secondaryContainer
-          ),
+          icon: const Icon(Icons.menu),
           onPressed: () {}, // TODO: switch the schedules
         ),
         title: Text(widget.title),
@@ -101,49 +104,139 @@ class _MyHomePageState extends State<MyHomePage> {
           )
         ],
       ),
+
+      // Course Body
       body: SafeArea(
         child: Column(
           children: [
-            Expanded(child: ScheduleBody(isEditMode: _editMode)),
-            const SizedBox(height: 50)
+            Expanded(child: ScheduleBody(isEditMode: _editMode, controller: _scheduleController)),
+            // const SizedBox(height: 50),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: _editMode ? cs.secondary : cs.primary,
-        onPressed: _switchEditMode,
-        tooltip: 'Edit Mode',
-        child: _editMode
-            ? const Icon(FontAwesomeIcons.check, size: 30)
-            : const Icon(Icons.edit, size: 30),
-      ),
-      bottomNavigationBar: NavigationBar(
-        onDestinationSelected: (int index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        backgroundColor: cs.surfaceContainerHighest,
-        indicatorColor: cs.primaryContainer,
-        selectedIndex: _selectedIndex,
-        destinations: const <Widget>[
-          NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home),
-            label: 'Home',
+
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        spacing: 16,
+        children: [
+          // Edit tool bar
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: _editMode ? Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                  color: cs.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(50),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(128), // Shadow color with opacity
+                      spreadRadius: 5, // Extent to which the shadow spreads
+                      blurRadius: 7, // Amount of blur applied to the shadow
+                      offset: const Offset(0, 3), // Offset of the shadow from the box (x, y)
+                    )
+                  ]
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => _scheduleController.addRow(),
+                    tooltip: 'New a row',
+                    icon: overlayIcon(Icons.table_rows_outlined, true, cs.tertiaryContainer)
+                  ),
+                  IconButton(
+                      onPressed: () => _scheduleController.removeRow(),
+                      tooltip: 'Remove a row',
+                      icon: overlayIcon(Icons.table_rows_outlined, false, cs.tertiaryContainer)
+                  ),
+                  IconButton(
+                      onPressed: () => _scheduleController.addDay(),
+                      tooltip: 'New a column',
+                      icon: overlayIcon(Icons.view_column_outlined, true, cs.tertiaryContainer)
+                  ),
+                  IconButton(
+                      onPressed: () => _scheduleController.removeDay(),
+                      tooltip: 'Remove a column',
+                      icon: overlayIcon(Icons.view_column_outlined, false, cs.tertiaryContainer)
+                  ),
+                ],
+              ),
+            ) : const SizedBox.shrink(),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.business_outlined),
-            selectedIcon: Icon(Icons.business),
-            label: 'Other',
+
+          // Edit Mode Button
+          FloatingActionButton(
+            backgroundColor: _editMode ? cs.tertiary : cs.primary,
+            onPressed: _switchEditMode,
+            tooltip: 'Edit Mode',
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(_editMode ? 50 : 16),
+            ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return ScaleTransition(scale: animation, child: child);
+              },
+              child: _editMode
+                  ? const Icon(Icons.check, size: 30, key: ValueKey('fab-check'))
+                  : const Icon(Icons.edit, size: 30, key: ValueKey('fab-edit')),
+            ),
           ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.settings),
-            icon: Icon(Icons.settings_outlined),
-            label: 'Settings',
-          ),
+
         ],
       ),
     );
   }
+
+  Widget bottomNavigationBar(ColorScheme cs) {
+    return NavigationBar(
+      onDestinationSelected: (int index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
+      backgroundColor: cs.surfaceContainerHighest,
+      indicatorColor: cs.primaryContainer,
+      selectedIndex: _selectedIndex,
+      destinations: const <Widget>[
+        NavigationDestination(
+          selectedIcon: Icon(Icons.home),
+          icon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.business_outlined),
+          selectedIcon: Icon(Icons.business),
+          label: 'Other',
+        ),
+        NavigationDestination(
+          selectedIcon: Icon(Icons.settings),
+          icon: Icon(Icons.settings_outlined),
+          label: 'Settings',
+        ),
+      ],
+    );
+  }
+}
+
+Widget overlayIcon(IconData base, bool isAdd, Color accent) {
+  return Stack(
+    clipBehavior: Clip.none,
+    alignment: Alignment.center,
+    children: [
+      Icon(base),
+      Positioned(
+        right: -5,
+        top: -6,
+        child: CircleAvatar(
+          radius: 8,
+          backgroundColor: accent,
+          child: Icon(
+              isAdd ? Icons.add : Icons.remove, size: 12,
+              color: Colors.white
+          ),
+        ),
+      ),
+    ],
+  );
 }
