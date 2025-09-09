@@ -1,36 +1,60 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timegrid/components/edit_course_bottom_sheet.dart';
 import 'package:timegrid/components/file_io_json.dart';
 import 'package:timegrid/models/course_model.dart';
+import 'package:timegrid/models/storage_service.dart';
+import 'package:timegrid/models/time_cell_model.dart';
+import 'package:timegrid/provider.dart';
 import 'package:timegrid/theme/Theme.dart';
 import 'dart:math' as math;
 
 import 'components/course_card.dart';
+import 'components/edit_time_cell_bottom_sheet.dart';
 import 'models/active_overlay.dart'; // 內含 DragPayload
 
 class ScheduleController extends ChangeNotifier {
+  final StorageService storage;
   int days;
   int rows;
 
-  ScheduleController({this.days = 5, this.rows = 8});
+  ScheduleController({required this.storage})
+    : days = storage.days,
+      rows = storage.rows;
+
+
+  void _persist() {
+    storage.setDays(days);
+    storage.setRows(rows);
+  }
 
   void addDay() {
     days = math.min(days + 1, 7);
+    _persist();
+    notifyListeners();
   }
 
   void removeDay() {
     days = math.max(days - 1, 5);
+    _persist();
     notifyListeners();
   }
 
   void addRow() {
     rows += 1;
+    _persist();
     notifyListeners();
   }
 
   void removeRow() {
     rows = math.max(rows - 1, 1);
+    _persist();
+    notifyListeners();
+  }
+
+  void reloadFromStorage() {
+    days = storage.days;
+    rows = storage.rows;
     notifyListeners();
   }
 }
@@ -56,7 +80,7 @@ class ScheduleBody extends StatelessWidget {
   }
 }
 
-class ScheduleGrid extends StatefulWidget {
+class ScheduleGrid extends ConsumerStatefulWidget {
   final double rowHeight;
   final double dayHeaderHeight;
   final double timeLabelWidth;
@@ -79,18 +103,19 @@ class ScheduleGrid extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<ScheduleGrid> createState() => _ScheduleGridState();
+  ConsumerState<ScheduleGrid> createState() => _ScheduleGridState();
 
-  Future<CourseModel?> _openEditCourseModal(BuildContext ctx, CourseModel course, VoidCallback? onDelete) {
-    return editCourseBottomSheet(ctx, course, onDelete);
-  }
+  Future<CourseModel?> _openEditCourseModal(BuildContext ctx, CourseModel course, WidgetRef ref, VoidCallback? onDelete)
+    => editCourseBottomSheet(ctx, course, ref, onDelete);
+
+  Future<TimeCellModel?> _openEditTimeCellModal(BuildContext ctx, TimeCellModel time, WidgetRef ref)
+    => editTimeCellBottomSheet(ctx, time, ref);
+
 }
 
-class _ScheduleGridState extends State<ScheduleGrid> {
+class _ScheduleGridState extends ConsumerState<ScheduleGrid> {
   bool _isLoadingFromHive = false;
-
   final Map<String, CourseModel> _occupiedMap = {}; // cell -> course
-
   final ScrollController _scrollController = ScrollController();
 
   String _keyFor(int row, int day) => '$row,$day';
@@ -101,12 +126,13 @@ class _ScheduleGridState extends State<ScheduleGrid> {
 
   Future<void> _saveSchedule() async {
     try {
-      final box = Hive.box<CourseModel>('courses_box');
+      final storage = ref.read(storageProvider);
       final unique = <String, CourseModel>{};
       for (final c in _occupiedMap.values) {
         unique[c.id] = c;
       }
-      await box.putAll(unique);
+      await storage.clearCourses();
+      await storage.putAllCourses(unique);
     } catch (e, st) {
       debugPrint('Hive saveSchedule error: $e\n$st');
     }
@@ -115,9 +141,9 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   Future<void> _loadSchedule() async {
     _isLoadingFromHive = true;
     try {
-      final box = Hive.box<CourseModel>('courses_box');
+      final storage = ref.read(storageProvider);
       _occupiedMap.clear();
-      for (final dynamic v in box.values) {
+      for (final dynamic v in storage.getAllCourses()) {
         final CourseModel c = v as CourseModel;
         _placeCourse(c);
       }
@@ -380,23 +406,25 @@ class _ScheduleGridState extends State<ScheduleGrid> {
         );
       }
 
-      // 左側時間欄
+      // Left Time Column
       Widget timeColumn() {
         List<String> slotNames = [];
         return GestureDetector(
           onTap: () async {
-            final TimeOfDay? picked = await showTimePicker(
-              context: context,
-              initialEntryMode: TimePickerEntryMode.input,
-              initialTime: const TimeOfDay(hour: 0, minute: 0),
-              builder: (BuildContext context, Widget? child) {
-                // 強制 24 小時制（覆寫當前 MediaQuery）
-                return MediaQuery(
-                  data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-                  child: child!,
-                );
-              },
-            );
+            final TimeCellModel? edited = await widget._openEditTimeCellModal(
+                context,
+                const TimeCellModel(displayName: 'A', startTime: TimeOfDay(hour: 8, minute: 0), endTime: TimeOfDay(hour: 9, minute: 0)),
+                ref);
+            // final TimeOfDay? picked = await showTimePicker(
+            //   context: context,
+            //   initialTime: const TimeOfDay(hour: 0, minute: 0),
+            //   builder: (BuildContext context, Widget? child) {
+            //     return MediaQuery(
+            //       data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+            //       child: child!,
+            //     );
+            //   },
+            // );
           },
           child: SizedBox(
             width: widget.timeLabelWidth,
@@ -411,9 +439,22 @@ class _ScheduleGridState extends State<ScheduleGrid> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
-                    child: Text(
-                      r < slotNames.length ? slotNames[r] : (r+1).toString(),
-                      style: TextStyle(color: cs.onPrimaryContainer, fontSize: 16),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '08:00',
+                          style: TextStyle(color: cs.tertiary, fontSize: 9),
+                        ),
+                        Text(
+                          r < slotNames.length ? slotNames[r] : (r+1).toString(),
+                          style: TextStyle(color: cs.onPrimaryContainer, fontSize: 16),
+                        ),
+                        Text(
+                          '08:00',
+                          style: TextStyle(color: cs.tertiary, fontSize: 9),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -470,7 +511,7 @@ class _ScheduleGridState extends State<ScheduleGrid> {
                       // 非 overlay 時使用 Draggable
                       onTap: () async {
                         final updated = await widget._openEditCourseModal(
-                            context, course, () => setState(() => _clearCourse(course)));
+                            context, course, ref, () => setState(() => _clearCourse(course)));
 
                         if (updated == null) return;
                         final newCourse = course.copyWith(

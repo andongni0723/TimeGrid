@@ -2,32 +2,41 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:timegrid/models/course_model.dart';
 import 'package:timegrid/models/course_chips_model.dart';
 
+import '../provider.dart';
+
 final ValueNotifier<int> importNotifier = ValueNotifier<int>(0);
 
-String _generateExportJson() {
-  final coursesBox = Hive.box<CourseModel>('courses_box');
-  final chipsBox = Hive.box<CourseChipsModel>('chips_box');
+String _generateExportJson(WidgetRef ref) {
+  final storage = ref.read(storageProvider);
 
-  final courses = coursesBox.values.map((c) => c.toJson()).toList();
-  final chips = chipsBox.values.map((c) => c.toJson()).toList();
+  final courses = storage.getAllCourses();
+  final chips = storage.getAllChips();
+  final settings = {
+    'days': storage.days,
+    'rows': storage.rows,
+  };
+
   final map = {
     'courses' : courses,
     'chips' : chips,
+    'settings': settings,
     'exported_at': DateTime.now().toIso8601String(),
   };
+
+  debugPrint(map.toString());
 
   return const JsonEncoder.withIndent('    ').convert(map);
 }
 
-Future<void> exportJsonToSystemShare(BuildContext context) async {
+Future<void> exportJsonToSystemShare(BuildContext context, WidgetRef ref) async {
   try {
-    final jsonStr = _generateExportJson();
+    final jsonStr = _generateExportJson(ref);
     final tmp = await getTemporaryDirectory();
     final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
     final filename = 'timegrid_export_$timestamp.json';
@@ -53,9 +62,10 @@ Future<void> exportJsonToSystemShare(BuildContext context) async {
 }
 
 Future<void> importJsonFromSystemFile(
-    BuildContext context, {
-    VoidCallback? onImport,
-}) async {
+    BuildContext context,
+    WidgetRef ref,
+    { VoidCallback? onImport,}
+) async {
   try {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -74,7 +84,7 @@ Future<void> importJsonFromSystemFile(
 
     final file = File(path);
     final content = await file.readAsString();
-    final res = await _importDataFromJsonString(content);
+    final res = await _importDataFromJsonString(content, ref);
 
     try {
       onImport?.call();
@@ -95,13 +105,12 @@ Future<void> importJsonFromSystemFile(
   }
 }
 
-Future<Map<String, int>> _importDataFromJsonString(String jsonStr) async {
+Future<Map<String, int>> _importDataFromJsonString(String jsonStr, WidgetRef ref) async {
   final dynamic decoded = jsonDecode(jsonStr);
-  final coursesBox = Hive.box<CourseModel>('courses_box');
-  final chipsBox = Hive.box<CourseChipsModel>('chips_box');
+  final storage = ref.read(storageProvider);
 
-  coursesBox.clear();
-  chipsBox.clear();
+  await storage.clearCourses();
+  await storage.clearChips();
 
   int coursesCount = 0;
   int chipsCount = 0;
@@ -112,7 +121,7 @@ Future<Map<String, int>> _importDataFromJsonString(String jsonStr) async {
       for(final item in list) {
         final m = Map<String, dynamic>.from(item as Map);
         final course = CourseModel.fromJson(m);
-        await coursesBox.put(course.id, course);
+        await storage.putCourse(course);
         debugPrint('course: ${course.toJson()}');
         coursesCount++;
       }
@@ -122,20 +131,31 @@ Future<Map<String, int>> _importDataFromJsonString(String jsonStr) async {
       for (final item in list) {
         final m = Map<String, dynamic>.from(item as Map);
         final chip = CourseChipsModel.fromJson(m);
-        await chipsBox.put(chip.id, chip);
+        await storage.putChip(chip);
         chipsCount++;
+      }
+    }
+    if (decoded.containsKey('settings')) {
+      final map = decoded['settings'];
+      if (map is Map) {
+        final days = (map['days'] is int) ? map['days'] as int : 5;
+        final rows = (map['rows'] is int) ? map['rows'] as int : 8;
+        await storage.setDays(days);
+        await storage.setRows(rows);
       }
     }
   } else if (decoded is List) {
     for(final item in decoded) {
       final m = Map<String, dynamic>.from(item as Map);
       final course = CourseModel.fromJson(m);
-      await coursesBox.put(course.id, course);
+      await storage.putCourse(course);
       coursesCount++;
     }
   } else {
     throw const FormatException('Unsupported JSON format');
   }
+
+  ref.read(scheduleProvider).reloadFromStorage();
 
   return {'courses': coursesCount, 'chips': chipsCount};
 }

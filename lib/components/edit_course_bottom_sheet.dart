@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timegrid/models/course_chips_model.dart';
 import 'package:timegrid/models/course_model.dart';
-import 'package:hive/hive.dart';
 
+import '../provider.dart';
 import '../theme/Theme.dart';
 
-Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course, VoidCallback? onDelete) {
+Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course, WidgetRef ref, VoidCallback? onDelete) {
   final formKey = GlobalKey<FormState>();
   final roomController = TextEditingController(text: course.room);
   final cs = Theme.of(ctx).colorScheme;
 
-  final box = Hive.box<CourseChipsModel>('chips_box');
-  List<CourseChipsModel> chipsData = box.values.toList();
+  final storage = ref.read(storageProvider);
+  List<CourseChipsModel> chipsData = storage.getAllChips();
 
   String? selectedChipId = chipsData.isNotEmpty ? chipsData[0].id : null;
 
@@ -42,7 +43,7 @@ Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course,
                           icon: const Icon(Icons.delete),
                           onPressed: () {
                             onDelete?.call();
-                            Navigator.pop(context);
+                            Navigator.pop(context, null);
                           },
                         ),
                       ],
@@ -86,7 +87,7 @@ Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course,
                                     if (selectedChipId == data.id) selectedChipId = null;
                                     chipsData.removeWhere((c) => c.id == idToRemove);
                                   });
-                                  await box.delete(idToRemove);
+                                  await storage.removeChip(idToRemove);
                                 },
                               );
                             }).toList(),
@@ -97,7 +98,7 @@ Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course,
                               onPressed: () {
                                 openAddCourseChipDialog(context, (newClipData) {
                                   setState(() => chipsData.add(newClipData));
-                                  Hive.box<CourseChipsModel>('chips_box').put(newClipData.id, newClipData);
+                                  storage.putChip(newClipData);
                                 });
                               },
                             ),
@@ -135,9 +136,9 @@ Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course,
                                 ? null
                                 : () {
                                     final updated = course.copyWith(
-                                      title: box.get(selectedChipId!)?.title ?? 'New Course',
+                                      title: storage.getChip(selectedChipId!)?.title ?? 'New Course',
                                       room: roomController.text.trim(),
-                                      color: box.get(selectedChipId!)?.color ?? colorLibrary[0],
+                                      color: storage.getChip(selectedChipId!)?.color ?? colorLibrary[0],
                                     );
                                     Navigator.pop(context, updated);
                                   },

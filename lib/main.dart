@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:timegrid/models/course_chips_model.dart';
 import 'package:timegrid/models/course_model.dart';
+import 'package:timegrid/models/storage_service.dart';
+import 'package:timegrid/provider.dart';
 import 'package:timegrid/schedule.dart';
 import 'package:timegrid/theme/Theme.dart';
 
@@ -18,8 +20,13 @@ Future<void> main() async {
 
   await Hive.openBox<CourseModel>('courses_box');
   await Hive.openBox<CourseChipsModel>('chips_box');
+  await Hive.openBox('settings_box');
 
-  runApp(const ProviderScope(child: MyApp()));
+  final storage = await StorageService.create();
+
+  runApp(ProviderScope(overrides: [
+    storageProvider.overrideWithValue(storage),
+  ], child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -44,16 +51,17 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends ConsumerStatefulWidget {
   const MyHomePage({super.key, required this.title});
+
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  ConsumerState<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  final ScheduleController _scheduleController = ScheduleController();
+class _MyHomePageState extends ConsumerState<MyHomePage> {
+  // final ScheduleController _scheduleController = ScheduleController();
 
   int _selectedIndex = 0;
   bool _editMode = false;
@@ -63,6 +71,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final scheduleController = ref.watch(scheduleProvider);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: cs.surface,
@@ -88,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: const Text('Export to file (.json)'),
                 onPressed: () {
                   MenuController.maybeOf(context)?.close();
-                  exportJsonToSystemShare(context);
+                  exportJsonToSystemShare(context, ref);
                 },
               ),
               MenuItemButton(
@@ -97,10 +107,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: const Text('Import from file (.json)'),
                 onPressed: () {
                   MenuController.maybeOf(context)?.close();
-                  importJsonFromSystemFile(context);
+                  importJsonFromSystemFile(context, ref);
                 },
               )
-            ]
+            ],
           )
         ],
       ),
@@ -109,7 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: SafeArea(
         child: Column(
           children: [
-            Expanded(child: ScheduleBody(isEditMode: _editMode, controller: _scheduleController)),
+            Expanded(child: ScheduleBody(isEditMode: _editMode, controller: scheduleController)),
             // const SizedBox(height: 50),
           ],
         ),
@@ -122,46 +132,41 @@ class _MyHomePageState extends State<MyHomePage> {
           // Edit tool bar
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
-            child: _editMode ? Container(
-              height: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                  color: cs.tertiaryContainer,
-                  borderRadius: BorderRadius.circular(50),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(128), // Shadow color with opacity
-                      spreadRadius: 5, // Extent to which the shadow spreads
-                      blurRadius: 7, // Amount of blur applied to the shadow
-                      offset: const Offset(0, 3), // Offset of the shadow from the box (x, y)
-                    )
-                  ]
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => _scheduleController.addRow(),
-                    tooltip: 'New a row',
-                    icon: overlayIcon(Icons.table_rows_outlined, true, cs.tertiaryContainer)
-                  ),
-                  IconButton(
-                      onPressed: () => _scheduleController.removeRow(),
-                      tooltip: 'Remove a row',
-                      icon: overlayIcon(Icons.table_rows_outlined, false, cs.tertiaryContainer)
-                  ),
-                  IconButton(
-                      onPressed: () => _scheduleController.addDay(),
-                      tooltip: 'New a column',
-                      icon: overlayIcon(Icons.view_column_outlined, true, cs.tertiaryContainer)
-                  ),
-                  IconButton(
-                      onPressed: () => _scheduleController.removeDay(),
-                      tooltip: 'Remove a column',
-                      icon: overlayIcon(Icons.view_column_outlined, false, cs.tertiaryContainer)
-                  ),
-                ],
-              ),
-            ) : const SizedBox.shrink(),
+            child: _editMode
+                ? Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration:
+                        BoxDecoration(color: cs.tertiaryContainer, borderRadius: BorderRadius.circular(50), boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(128), // Shadow color with opacity
+                        spreadRadius: 5, // Extent to which the shadow spreads
+                        blurRadius: 7, // Amount of blur applied to the shadow
+                        offset: const Offset(0, 3), // Offset of the shadow from the box (x, y)
+                      )
+                    ]),
+                    child: Row(
+                      children: [
+                        IconButton(
+                            onPressed: () => scheduleController.addRow(),
+                            tooltip: 'New a row',
+                            icon: overlayIcon(Icons.table_rows_outlined, true, cs.tertiaryContainer)),
+                        IconButton(
+                            onPressed: () => scheduleController.removeRow(),
+                            tooltip: 'Remove a row',
+                            icon: overlayIcon(Icons.table_rows_outlined, false, cs.tertiaryContainer)),
+                        IconButton(
+                            onPressed: () => scheduleController.addDay(),
+                            tooltip: 'New a column',
+                            icon: overlayIcon(Icons.view_column_outlined, true, cs.tertiaryContainer)),
+                        IconButton(
+                            onPressed: () => scheduleController.removeDay(),
+                            tooltip: 'Remove a column',
+                            icon: overlayIcon(Icons.view_column_outlined, false, cs.tertiaryContainer)),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
           ),
 
           // Edit Mode Button
@@ -182,7 +187,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   : const Icon(Icons.edit, size: 30, key: ValueKey('fab-edit')),
             ),
           ),
-
         ],
       ),
     );
@@ -231,10 +235,7 @@ Widget overlayIcon(IconData base, bool isAdd, Color accent) {
         child: CircleAvatar(
           radius: 8,
           backgroundColor: accent,
-          child: Icon(
-              isAdd ? Icons.add : Icons.remove, size: 12,
-              color: Colors.white
-          ),
+          child: Icon(isAdd ? Icons.add : Icons.remove, size: 12, color: Colors.white),
         ),
       ),
     ],
