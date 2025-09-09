@@ -19,6 +19,8 @@ mixin _$TimeCellModel {
   TimeOfDay get startTime;
   @TimeOfDayConverter()
   TimeOfDay get endTime;
+  bool get showStartTime;
+  bool get showEndTime;
 
   /// Create a copy of TimeCellModel
   /// with the given fields replaced by the non-null parameter values.
@@ -40,16 +42,21 @@ mixin _$TimeCellModel {
                 other.displayName == displayName) &&
             (identical(other.startTime, startTime) ||
                 other.startTime == startTime) &&
-            (identical(other.endTime, endTime) || other.endTime == endTime));
+            (identical(other.endTime, endTime) || other.endTime == endTime) &&
+            (identical(other.showStartTime, showStartTime) ||
+                other.showStartTime == showStartTime) &&
+            (identical(other.showEndTime, showEndTime) ||
+                other.showEndTime == showEndTime));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, displayName, startTime, endTime);
+  int get hashCode => Object.hash(
+      runtimeType, displayName, startTime, endTime, showStartTime, showEndTime);
 
   @override
   String toString() {
-    return 'TimeCellModel(displayName: $displayName, startTime: $startTime, endTime: $endTime)';
+    return 'TimeCellModel(displayName: $displayName, startTime: $startTime, endTime: $endTime, showStartTime: $showStartTime, showEndTime: $showEndTime)';
   }
 }
 
@@ -62,7 +69,9 @@ abstract mixin class $TimeCellModelCopyWith<$Res> {
   $Res call(
       {String displayName,
       @TimeOfDayConverter() TimeOfDay startTime,
-      @TimeOfDayConverter() TimeOfDay endTime});
+      @TimeOfDayConverter() TimeOfDay endTime,
+      bool showStartTime,
+      bool showEndTime});
 }
 
 /// @nodoc
@@ -81,6 +90,8 @@ class _$TimeCellModelCopyWithImpl<$Res>
     Object? displayName = null,
     Object? startTime = null,
     Object? endTime = null,
+    Object? showStartTime = null,
+    Object? showEndTime = null,
   }) {
     return _then(_self.copyWith(
       displayName: null == displayName
@@ -95,6 +106,14 @@ class _$TimeCellModelCopyWithImpl<$Res>
           ? _self.endTime
           : endTime // ignore: cast_nullable_to_non_nullable
               as TimeOfDay,
+      showStartTime: null == showStartTime
+          ? _self.showStartTime
+          : showStartTime // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showEndTime: null == showEndTime
+          ? _self.showEndTime
+          : showEndTime // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -195,14 +214,17 @@ extension TimeCellModelPatterns on TimeCellModel {
     TResult Function(
             String displayName,
             @TimeOfDayConverter() TimeOfDay startTime,
-            @TimeOfDayConverter() TimeOfDay endTime)?
+            @TimeOfDayConverter() TimeOfDay endTime,
+            bool showStartTime,
+            bool showEndTime)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _TimeCellModel() when $default != null:
-        return $default(_that.displayName, _that.startTime, _that.endTime);
+        return $default(_that.displayName, _that.startTime, _that.endTime,
+            _that.showStartTime, _that.showEndTime);
       case _:
         return orElse();
     }
@@ -226,13 +248,16 @@ extension TimeCellModelPatterns on TimeCellModel {
     TResult Function(
             String displayName,
             @TimeOfDayConverter() TimeOfDay startTime,
-            @TimeOfDayConverter() TimeOfDay endTime)
+            @TimeOfDayConverter() TimeOfDay endTime,
+            bool showStartTime,
+            bool showEndTime)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _TimeCellModel():
-        return $default(_that.displayName, _that.startTime, _that.endTime);
+        return $default(_that.displayName, _that.startTime, _that.endTime,
+            _that.showStartTime, _that.showEndTime);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -255,13 +280,16 @@ extension TimeCellModelPatterns on TimeCellModel {
     TResult? Function(
             String displayName,
             @TimeOfDayConverter() TimeOfDay startTime,
-            @TimeOfDayConverter() TimeOfDay endTime)?
+            @TimeOfDayConverter() TimeOfDay endTime,
+            bool showStartTime,
+            bool showEndTime)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _TimeCellModel() when $default != null:
-        return $default(_that.displayName, _that.startTime, _that.endTime);
+        return $default(_that.displayName, _that.startTime, _that.endTime,
+            _that.showStartTime, _that.showEndTime);
       case _:
         return null;
     }
@@ -274,7 +302,9 @@ class _TimeCellModel implements TimeCellModel {
   const _TimeCellModel(
       {required this.displayName,
       @TimeOfDayConverter() required this.startTime,
-      @TimeOfDayConverter() required this.endTime});
+      @TimeOfDayConverter() required this.endTime,
+      required this.showStartTime,
+      required this.showEndTime});
   factory _TimeCellModel.fromJson(Map<String, dynamic> json) =>
       _$TimeCellModelFromJson(json);
 
@@ -286,6 +316,10 @@ class _TimeCellModel implements TimeCellModel {
   @override
   @TimeOfDayConverter()
   final TimeOfDay endTime;
+  @override
+  final bool showStartTime;
+  @override
+  final bool showEndTime;
 
   /// Create a copy of TimeCellModel
   /// with the given fields replaced by the non-null parameter values.
@@ -311,16 +345,21 @@ class _TimeCellModel implements TimeCellModel {
                 other.displayName == displayName) &&
             (identical(other.startTime, startTime) ||
                 other.startTime == startTime) &&
-            (identical(other.endTime, endTime) || other.endTime == endTime));
+            (identical(other.endTime, endTime) || other.endTime == endTime) &&
+            (identical(other.showStartTime, showStartTime) ||
+                other.showStartTime == showStartTime) &&
+            (identical(other.showEndTime, showEndTime) ||
+                other.showEndTime == showEndTime));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, displayName, startTime, endTime);
+  int get hashCode => Object.hash(
+      runtimeType, displayName, startTime, endTime, showStartTime, showEndTime);
 
   @override
   String toString() {
-    return 'TimeCellModel(displayName: $displayName, startTime: $startTime, endTime: $endTime)';
+    return 'TimeCellModel(displayName: $displayName, startTime: $startTime, endTime: $endTime, showStartTime: $showStartTime, showEndTime: $showEndTime)';
   }
 }
 
@@ -335,7 +374,9 @@ abstract mixin class _$TimeCellModelCopyWith<$Res>
   $Res call(
       {String displayName,
       @TimeOfDayConverter() TimeOfDay startTime,
-      @TimeOfDayConverter() TimeOfDay endTime});
+      @TimeOfDayConverter() TimeOfDay endTime,
+      bool showStartTime,
+      bool showEndTime});
 }
 
 /// @nodoc
@@ -354,6 +395,8 @@ class __$TimeCellModelCopyWithImpl<$Res>
     Object? displayName = null,
     Object? startTime = null,
     Object? endTime = null,
+    Object? showStartTime = null,
+    Object? showEndTime = null,
   }) {
     return _then(_TimeCellModel(
       displayName: null == displayName
@@ -368,6 +411,14 @@ class __$TimeCellModelCopyWithImpl<$Res>
           ? _self.endTime
           : endTime // ignore: cast_nullable_to_non_nullable
               as TimeOfDay,
+      showStartTime: null == showStartTime
+          ? _self.showStartTime
+          : showStartTime // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showEndTime: null == showEndTime
+          ? _self.showEndTime
+          : showEndTime // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }

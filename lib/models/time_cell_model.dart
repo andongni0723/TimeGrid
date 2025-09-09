@@ -11,6 +11,8 @@ abstract class TimeCellModel with _$TimeCellModel {
     required String displayName,
     @TimeOfDayConverter() required TimeOfDay startTime,
     @TimeOfDayConverter() required TimeOfDay endTime,
+    required bool showStartTime,
+    required bool showEndTime,
   }) = _TimeCellModel;
 
   factory TimeCellModel.fromJson(Map<String, dynamic> json) => _$TimeCellModelFromJson(json);

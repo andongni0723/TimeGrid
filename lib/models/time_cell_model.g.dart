@@ -13,6 +13,8 @@ _TimeCellModel _$TimeCellModelFromJson(Map<String, dynamic> json) =>
           .fromJson(json['startTime'] as Map<String, dynamic>),
       endTime: const TimeOfDayConverter()
           .fromJson(json['endTime'] as Map<String, dynamic>),
+      showStartTime: json['showStartTime'] as bool,
+      showEndTime: json['showEndTime'] as bool,
     );
 
 Map<String, dynamic> _$TimeCellModelToJson(_TimeCellModel instance) =>
@@ -20,4 +22,6 @@ Map<String, dynamic> _$TimeCellModelToJson(_TimeCellModel instance) =>
       'displayName': instance.displayName,
       'startTime': const TimeOfDayConverter().toJson(instance.startTime),
       'endTime': const TimeOfDayConverter().toJson(instance.endTime),
+      'showStartTime': instance.showStartTime,
+      'showEndTime': instance.showEndTime,
     };

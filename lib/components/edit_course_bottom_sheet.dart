@@ -48,6 +48,7 @@ Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course,
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
                     Column(
                       mainAxisSize: MainAxisSize.max,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,7 +123,6 @@ Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course,
                     Row(
                       spacing: 12,
                       children: [
-
                         // Cancel Button
                         Expanded(
                           child:

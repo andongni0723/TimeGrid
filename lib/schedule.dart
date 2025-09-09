@@ -19,9 +19,8 @@ class ScheduleController extends ChangeNotifier {
   int rows;
 
   ScheduleController({required this.storage})
-    : days = storage.days,
-      rows = storage.rows;
-
+      : days = storage.days,
+        rows = storage.rows;
 
   void _persist() {
     storage.setDays(days);
@@ -105,12 +104,12 @@ class ScheduleGrid extends ConsumerStatefulWidget {
   @override
   ConsumerState<ScheduleGrid> createState() => _ScheduleGridState();
 
-  Future<CourseModel?> _openEditCourseModal(BuildContext ctx, CourseModel course, WidgetRef ref, VoidCallback? onDelete)
-    => editCourseBottomSheet(ctx, course, ref, onDelete);
+  Future<CourseModel?> _openEditCourseModal(
+          BuildContext ctx, CourseModel course, WidgetRef ref, VoidCallback? onDelete) =>
+      editCourseBottomSheet(ctx, course, ref, onDelete);
 
-  Future<TimeCellModel?> _openEditTimeCellModal(BuildContext ctx, TimeCellModel time, WidgetRef ref)
-    => editTimeCellBottomSheet(ctx, time, ref);
-
+  Future<TimeCellModel?> _openEditTimeCellModal(BuildContext ctx, TimeCellModel time, WidgetRef ref) =>
+      editTimeCellBottomSheet(ctx, time, ref);
 }
 
 class _ScheduleGridState extends ConsumerState<ScheduleGrid> {
@@ -411,20 +410,16 @@ class _ScheduleGridState extends ConsumerState<ScheduleGrid> {
         List<String> slotNames = [];
         return GestureDetector(
           onTap: () async {
+            if (!widget.editMode) return;
             final TimeCellModel? edited = await widget._openEditTimeCellModal(
                 context,
-                const TimeCellModel(displayName: 'A', startTime: TimeOfDay(hour: 8, minute: 0), endTime: TimeOfDay(hour: 9, minute: 0)),
+                const TimeCellModel(
+                    displayName: 'A',
+                    startTime: TimeOfDay(hour: 8, minute: 0),
+                    endTime: TimeOfDay(hour: 9, minute: 0),
+                    showStartTime: true,
+                    showEndTime: true),
                 ref);
-            // final TimeOfDay? picked = await showTimePicker(
-            //   context: context,
-            //   initialTime: const TimeOfDay(hour: 0, minute: 0),
-            //   builder: (BuildContext context, Widget? child) {
-            //     return MediaQuery(
-            //       data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-            //       child: child!,
-            //     );
-            //   },
-            // );
           },
           child: SizedBox(
             width: widget.timeLabelWidth,
@@ -447,7 +442,7 @@ class _ScheduleGridState extends ConsumerState<ScheduleGrid> {
                           style: TextStyle(color: cs.tertiary, fontSize: 9),
                         ),
                         Text(
-                          r < slotNames.length ? slotNames[r] : (r+1).toString(),
+                          r < slotNames.length ? slotNames[r] : (r + 1).toString(),
                           style: TextStyle(color: cs.onPrimaryContainer, fontSize: 16),
                         ),
                         Text(
