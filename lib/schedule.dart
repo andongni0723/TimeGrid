@@ -408,54 +408,62 @@ class _ScheduleGridState extends ConsumerState<ScheduleGrid> {
       // Left Time Column
       Widget timeColumn() {
         List<String> slotNames = [];
-        return GestureDetector(
-          onTap: () async {
-            if (!widget.editMode) return;
-            final TimeCellModel? edited = await widget._openEditTimeCellModal(
-                context,
-                const TimeCellModel(
-                    displayName: 'A',
-                    startTime: TimeOfDay(hour: 8, minute: 0),
-                    endTime: TimeOfDay(hour: 9, minute: 0),
-                    showStartTime: true,
-                    showEndTime: true),
-                ref);
-          },
-          child: SizedBox(
-            width: widget.timeLabelWidth,
-            child: Column(
-              children: List.generate(widget.controller.rows, (r) {
-                return Padding(
-                  padding: EdgeInsets.symmetric(vertical: widget.cellVGap, horizontal: widget.cellHGap),
-                  child: Container(
-                    height: widget.rowHeight - (widget.cellVGap * 2),
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
+
+        TimeCellModel defaultTimeCell(int idx) => TimeCellModel(
+          id: idx.toString(),
+          displayName: (idx + 1).toString(),
+          startTime: TimeOfDay(hour: 8 + idx - 1, minute: 0),
+          endTime: TimeOfDay(hour: 9 + idx - 1, minute: 0),
+          showStartTime: true,
+          showEndTime: true,
+        );
+
+        return SizedBox(
+          width: widget.timeLabelWidth,
+          child: Column(
+        children: List.generate(widget.controller.rows, (idx) {
+
+          var cellDetail = ref.read(storageProvider).getTimeCell(idx.toString()) ?? defaultTimeCell(idx);
+
+          return GestureDetector(
+            onTap: () async {
+              final TimeCellModel? edited = await widget._openEditTimeCellModal(context, cellDetail, ref);
+              setState(() => cellDetail = edited ?? cellDetail);
+            },
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: widget.cellVGap, horizontal: widget.cellHGap),
+              child: Container(
+                height: widget.rowHeight - (widget.cellVGap * 2),
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (cellDetail.showStartTime)
+                      Text(
+                        cellDetail.startTime.format24Hour(),
+                        style: TextStyle(color: cs.tertiary, fontSize: 9),
+                      ),
+                    Text(
+                      cellDetail.displayName,
+                      style: TextStyle(color: cs.onPrimaryContainer, fontSize: 16),
                     ),
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '08:00',
-                          style: TextStyle(color: cs.tertiary, fontSize: 9),
-                        ),
-                        Text(
-                          r < slotNames.length ? slotNames[r] : (r + 1).toString(),
-                          style: TextStyle(color: cs.onPrimaryContainer, fontSize: 16),
-                        ),
-                        Text(
-                          '08:00',
-                          style: TextStyle(color: cs.tertiary, fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
+                    if (cellDetail.showEndTime)
+                      Text(
+                        cellDetail.endTime.format24Hour(),
+                        style: TextStyle(color: cs.tertiary, fontSize: 9),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
+          );
+        }),
+        ),
+
         );
       }
 

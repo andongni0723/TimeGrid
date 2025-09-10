@@ -8,6 +8,7 @@ part of 'time_cell_model.dart';
 
 _TimeCellModel _$TimeCellModelFromJson(Map<String, dynamic> json) =>
     _TimeCellModel(
+      id: json['id'] as String,
       displayName: json['displayName'] as String,
       startTime: const TimeOfDayConverter()
           .fromJson(json['startTime'] as Map<String, dynamic>),
@@ -19,6 +20,7 @@ _TimeCellModel _$TimeCellModelFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$TimeCellModelToJson(_TimeCellModel instance) =>
     <String, dynamic>{
+      'id': instance.id,
       'displayName': instance.displayName,
       'startTime': const TimeOfDayConverter().toJson(instance.startTime),
       'endTime': const TimeOfDayConverter().toJson(instance.endTime),

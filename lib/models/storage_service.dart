@@ -1,25 +1,29 @@
 import 'package:hive/hive.dart';
 import 'package:timegrid/models/course_chips_model.dart';
 import 'package:timegrid/models/course_model.dart';
+import 'package:timegrid/models/time_cell_model.dart';
 
 class Boxes {
   static const String courses = 'courses_box';
   static const String chips = 'chips_box';
   static const String settings = 'settings_box';
+  static const String timeCells = 'time_cells_box';
 }
 
 class StorageService {
   final Box<CourseModel> _coursesBox;
   final Box<CourseChipsModel> _chipsBox;
   final Box _settingsBox;
+  final Box<TimeCellModel> _timeCellsBox;
 
-  StorageService._(this._coursesBox, this._chipsBox, this._settingsBox);
+  StorageService._(this._coursesBox, this._chipsBox, this._settingsBox, this._timeCellsBox);
 
   static Future<StorageService> create() async {
     final coursesBox = await Hive.openBox<CourseModel>(Boxes.courses);
     final chipsBox = await Hive.openBox<CourseChipsModel>(Boxes.chips);
     final settingsBox = await Hive.openBox(Boxes.settings);
-    return StorageService._(coursesBox, chipsBox, settingsBox);
+    final timeCellsBox = await Hive.openBox<TimeCellModel>(Boxes.timeCells);
+    return StorageService._(coursesBox, chipsBox, settingsBox, timeCellsBox);
   }
 
   // courses
@@ -42,6 +46,19 @@ class StorageService {
   int get rows => _settingsBox.get('rows', defaultValue: 8) as int;
   Future<void> setDays(int days) => _settingsBox.put('days', days);
   Future<void> setRows(int rows) => _settingsBox.put('rows', rows);
+
+
+  // time cells
+  List<TimeCellModel> getAllTimeCells() => _timeCellsBox.values.toList();
+  TimeCellModel? getTimeCell(String id) => _timeCellsBox.get(id);
+  Future<void> putTimeCell(TimeCellModel timeCell) => _timeCellsBox.put(timeCell.id, timeCell);
+  Future<void> putAllTimeCells(Map<String, TimeCellModel> map) => _timeCellsBox.putAll(map);
+  Future<void> deleteTimeCell(String id) => _timeCellsBox.delete(id);
+  Future<void> editTimeCell(TimeCellModel newData) async {
+    await deleteTimeCell(newData.id);
+    await putTimeCell(newData);
+  }
+
 
   Stream<BoxEvent> watchCourses() => _coursesBox.watch();
 }

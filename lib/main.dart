@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timegrid/models/course_chips_model.dart';
 import 'package:timegrid/models/course_model.dart';
 import 'package:timegrid/models/storage_service.dart';
+import 'package:timegrid/models/time_cell_model.dart';
 import 'package:timegrid/provider.dart';
 import 'package:timegrid/schedule.dart';
 import 'package:timegrid/theme/Theme.dart';
@@ -17,20 +19,19 @@ Future<void> main() async {
 
   Hive.registerAdapter(CourseModelAdapter());
   Hive.registerAdapter(CourseChipsModelAdapter());
-
-  await Hive.openBox<CourseModel>('courses_box');
-  await Hive.openBox<CourseChipsModel>('chips_box');
-  await Hive.openBox('settings_box');
+  Hive.registerAdapter(TimeCellModelAdapter());
 
   final storage = await StorageService.create();
+  final packageInfo = await PackageInfo.fromPlatform();
 
   runApp(ProviderScope(overrides: [
     storageProvider.overrideWithValue(storage),
-  ], child: const MyApp()));
+  ], child: MyApp(version: packageInfo.version)));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String version;
+  const MyApp({super.key, required this.version});
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
           side: BorderSide.none,
         ),
       ),
-      home: const MyHomePage(title: 'Schedule Grade 1'),
+      home: MyHomePage(title: 'v$version'),
     );
   }
 }

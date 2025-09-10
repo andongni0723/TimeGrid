@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:timegrid/models/course_model.dart';
 import 'package:timegrid/models/course_chips_model.dart';
 
+import '../models/time_cell_model.dart';
 import '../provider.dart';
 
 final ValueNotifier<int> importNotifier = ValueNotifier<int>(0);
@@ -21,15 +22,17 @@ String _generateExportJson(WidgetRef ref) {
     'days': storage.days,
     'rows': storage.rows,
   };
+  final timeCells = storage.getAllTimeCells();
 
   final map = {
     'courses' : courses,
     'chips' : chips,
     'settings': settings,
+    'time_cells': timeCells,
     'exported_at': DateTime.now().toIso8601String(),
   };
 
-  debugPrint(map.toString());
+  debugPrint(map.toString(), wrapWidth: 1024);
 
   return const JsonEncoder.withIndent('    ').convert(map);
 }
@@ -142,6 +145,14 @@ Future<Map<String, int>> _importDataFromJsonString(String jsonStr, WidgetRef ref
         final rows = (map['rows'] is int) ? map['rows'] as int : 8;
         await storage.setDays(days);
         await storage.setRows(rows);
+      }
+    }
+    if (decoded.containsKey('time_cells')) {
+      final list = decoded['time_cells'] as List<dynamic>;
+      for (final item in list) {
+        final m = Map<String, dynamic>.from(item as Map);
+        final cell = TimeCellModel.fromJson(m);
+        await storage.putTimeCell(cell);
       }
     }
   } else if (decoded is List) {
