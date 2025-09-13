@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id ('org.jetbrains.kotlin.plugin.compose') version '2.1.10'
     id 'dev.flutter.flutter-gradle-plugin'
 }
 
@@ -40,6 +41,11 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+
+    buildFeatures {
+        viewBinding true
+        compose true
+    }
 }
 
 flutter {
@@ -47,4 +53,8 @@ flutter {
 }
 
 dependencies {
+    implementation("androidx.glance:glance:1.2.0-beta01")
+    implementation("androidx.glance:glance-appwidget:1.2.0-beta01")
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1'
 }

@@ -27,7 +27,7 @@ plugins {
 
     // AGP / Kotlin 版本宣告（apply false）
     // 若你有指定不同版本，可把下面版本替換成你的版本號
-    id "com.android.application" version "8.6.1" apply false
+    id "com.android.application" version '8.9.2' apply false
     id "org.jetbrains.kotlin.android" version "2.1.0" apply false
 }
 
