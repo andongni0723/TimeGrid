@@ -13,9 +13,19 @@ class MainActivity: FlutterActivity() {
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         MethodChannel(messenger, channel).setMethodCallHandler { call, result ->
             when (call.method) {
-                "updateWidget" -> {
-                    val text = call.argument<String>("text") ?: ""
-                    updateNextCourseAndRefreshWidgets(context, text)
+                "updateCourseList" -> {
+                    val json = call.argument<String>("json") ?: """{"courses":[]}"""
+                    updateNextCourseAndRefreshWidgets(context, json)
+                    result.success(null)
+                }
+
+                "schedulePeriodicTick" -> {
+                    schedulePeriodicWidgetTick(context)
+                    result.success(null)
+                }
+
+                "cancelPeriodicTick" -> {
+                    cancelPeriodicWidgetTick(context)
                     result.success(null)
                 }
             }

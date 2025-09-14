@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timegrid/models/time_cell_model.dart';
 import 'package:timegrid/provider.dart';
+import 'package:timegrid/widget_bridge.dart';
 
 Future<TimeCellModel?> editTimeCellBottomSheet(BuildContext context, TimeCellModel timeCellModel, WidgetRef ref) {
   final textTheme = Theme
@@ -129,6 +130,7 @@ Future<TimeCellModel?> editTimeCellBottomSheet(BuildContext context, TimeCellMod
                                 onTimePicked: (newTime) async {
                                   final updated = current.copyWith(startTime: newTime);
                                   await storage.editTimeCell(updated);
+                                  await pushWidgetCourse(ref);
                                   current = updated;
                                   sheetSetState(() {});
                                 },
@@ -139,6 +141,7 @@ Future<TimeCellModel?> editTimeCellBottomSheet(BuildContext context, TimeCellMod
                                 onTimePicked: (newTime) async {
                                   final updated = current.copyWith(endTime: newTime);
                                   await storage.editTimeCell(updated);
+                                  await pushWidgetCourse(ref);
                                   current = updated;
                                   sheetSetState(() {});
                                 },

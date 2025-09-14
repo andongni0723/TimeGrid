@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:timegrid/models/course_model.dart';
 import 'package:timegrid/models/course_chips_model.dart';
+import 'package:timegrid/widget_bridge.dart';
 
 import '../models/time_cell_model.dart';
 import '../provider.dart';
@@ -111,6 +112,7 @@ Future<void> importJsonFromSystemFile(
 Future<Map<String, int>> _importDataFromJsonString(String jsonStr, WidgetRef ref) async {
   final dynamic decoded = jsonDecode(jsonStr);
   final storage = ref.read(storageProvider);
+  await pushWidgetCourse(ref);
 
   await storage.clearCourses();
   await storage.clearChips();

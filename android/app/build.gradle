@@ -9,8 +9,8 @@ android {
     namespace "com.andongni.timegrid"
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
-
     defaultConfig {
+        minSdkVersion 26
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
     }
@@ -56,5 +56,6 @@ dependencies {
     implementation("androidx.glance:glance:1.2.0-beta01")
     implementation("androidx.glance:glance-appwidget:1.2.0-beta01")
     implementation("androidx.datastore:datastore-preferences:1.1.7")
+    implementation("androidx.work:work-runtime-ktx:2.10.4")
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1'
 }

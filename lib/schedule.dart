@@ -7,6 +7,7 @@ import 'package:timegrid/models/storage_service.dart';
 import 'package:timegrid/models/time_cell_model.dart';
 import 'package:timegrid/provider.dart';
 import 'package:timegrid/theme/Theme.dart';
+import 'package:timegrid/widget_bridge.dart';
 import 'dart:math' as math;
 
 import 'components/course_card.dart';
@@ -157,6 +158,7 @@ class _ScheduleGridState extends ConsumerState<ScheduleGrid> {
   void _scheduleChanged() {
     if (_isLoadingFromHive) return;
     _saveSchedule();
+    pushWidgetCourse(ref);
   }
 
   void _onControllerChanged() {

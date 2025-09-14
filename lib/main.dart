@@ -10,6 +10,7 @@ import 'package:timegrid/models/time_cell_model.dart';
 import 'package:timegrid/provider.dart';
 import 'package:timegrid/schedule.dart';
 import 'package:timegrid/theme/Theme.dart';
+import 'package:timegrid/widget_bridge.dart';
 
 import 'components/file_io_json.dart';
 
@@ -59,11 +60,10 @@ class MyHomePage extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<MyHomePage> createState() => _MyHomePageState();
+
 }
 
 class _MyHomePageState extends ConsumerState<MyHomePage> {
-  // final ScheduleController _scheduleController = ScheduleController();
-
   int _selectedIndex = 0;
   bool _editMode = false;
 
@@ -71,6 +71,11 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      startWidgetAutoTick();
+      pushWidgetCourse(ref);
+    });
+
     final cs = Theme.of(context).colorScheme;
     final scheduleController = ref.watch(scheduleProvider);
 
