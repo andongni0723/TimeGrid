@@ -3,10 +3,13 @@ package com.andongni.timegrid
 import android.content.*
 import android.graphics.Color.parseColor
 import android.os.Build
+import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.*
+import androidx.core.graphics.ColorUtils
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.*
 import androidx.glance.action.*
@@ -96,6 +99,8 @@ class NextCourseGlance : GlanceAppWidget() {
                         .padding(vertical = 8.dp),
                 ) {
                     items(display) { course ->
+                        val textColor = lightenColor(course.color.toArgb(), 0.8f)
+                        val textColorProvider = ColorProvider(day = textColor, night = textColor)
                         Column {
                             Box(
                                 modifier = GlanceModifier
@@ -106,8 +111,8 @@ class NextCourseGlance : GlanceAppWidget() {
                                     .clickable(actionStartActivity(componentName)),
                             ) {
                                 Column {
-                                    Text(text = course.title, style = mainTextStyle.copy(fontSize = 16.sp))
-                                    Text(text = course.room, style = mainTextStyle.copy(fontSize = 12.sp))
+                                    Text(text = course.title, style = mainTextStyle.copy(fontSize = 16.sp, color = textColorProvider))
+                                    Text(text = course.room, style = mainTextStyle.copy(fontSize = 12.sp, color = textColorProvider))
                                     Text(text = "${course.startTime}-${course.endTime}", style = mainTextStyle.copy(fontSize = 12.sp))
                                 }
                             }
@@ -156,7 +161,6 @@ class ManualRefreshAction : ActionCallback {
         WorkManager.getInstance(context).enqueue(OneTimeWorkRequestBuilder<WidgetTickWorker>().build())
     }
 }
-
 
 
 data class CourseDto(
@@ -223,4 +227,10 @@ private fun weekdayZh(dow: DayOfWeek): String = when(dow) {
     DayOfWeek.FRIDAY    -> "週五"
     DayOfWeek.SATURDAY  -> "週六"
     DayOfWeek.SUNDAY    -> "週日"
+}
+
+@ColorInt
+fun lightenColor(@ColorInt color: Int, fraction: Float): Color {
+    val f = fraction.coerceIn(0f, 1f)
+    return Color(ColorUtils.blendARGB(color, 0xFFFFFFFF.toInt(), f))
 }

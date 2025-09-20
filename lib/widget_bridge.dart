@@ -21,7 +21,8 @@ Future<void> pushWidgetCourse(WidgetRef ref) async {
     return ai.compareTo(bi);
   });
 
-  debugPrint('allTimeCells: ${allTimeCells}');
+  debugPrint('allTimeCells:');
+  cells.forEach((obj) => debugPrint(obj.toString()));
 
   String colorToHex(Color c) =>
     '#${c.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}';
@@ -31,7 +32,13 @@ Future<void> pushWidgetCourse(WidgetRef ref) async {
   for (final dynamic v in allCourses) {
     final c = v as CourseModel;
 
-    final int startIdx = c.row;
+    // skip invalid course
+    if (c.row < 0 || c.row >= cells.length) {
+      debugPrint('skip invalid course: ${c.toJson()}');
+      continue;
+    }
+
+    final int startIdx = c.row.clamp(0, cells.length - 1);
     final int endIdx = (c.row + c.duration - 1).clamp(0, cells.length - 1);
 
     final start = cells[startIdx].startTime;

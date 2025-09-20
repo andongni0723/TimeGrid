@@ -409,63 +409,63 @@ class _ScheduleGridState extends ConsumerState<ScheduleGrid> {
 
       // Left Time Column
       Widget timeColumn() {
-        List<String> slotNames = [];
-
         TimeCellModel defaultTimeCell(int idx) => TimeCellModel(
-          id: idx.toString(),
-          displayName: (idx + 1).toString(),
-          startTime: TimeOfDay(hour: 8 + idx - 1, minute: 0),
-          endTime: TimeOfDay(hour: 9 + idx - 1, minute: 0),
-          showStartTime: true,
-          showEndTime: true,
-        );
+              id: idx.toString(),
+              displayName: (idx + 1).toString(),
+              startTime: TimeOfDay(hour: (8 + idx - 1).clamp(0, 23), minute: 0),
+              endTime: TimeOfDay(hour: (9 + idx - 1).clamp(0, 23), minute: 0),
+              showStartTime: true,
+              showEndTime: true,
+            );
 
         return SizedBox(
           width: widget.timeLabelWidth,
           child: Column(
-        children: List.generate(widget.controller.rows, (idx) {
+            children: List.generate(widget.controller.rows, (idx) {
+              TimeCellModel? storageCell = ref.read(storageProvider).getTimeCell(idx.toString());
+              var cellDetail = storageCell ?? defaultTimeCell(idx);
+              if (storageCell == null) {
+                ref.read(storageProvider).putTimeCell(cellDetail);
+              }
 
-          var cellDetail = ref.read(storageProvider).getTimeCell(idx.toString()) ?? defaultTimeCell(idx);
-
-          return GestureDetector(
-            onTap: () async {
-              final TimeCellModel? edited = await widget._openEditTimeCellModal(context, cellDetail, ref);
-              setState(() => cellDetail = edited ?? cellDetail);
-            },
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: widget.cellVGap, horizontal: widget.cellHGap),
-              child: Container(
-                height: widget.rowHeight - (widget.cellVGap * 2),
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                alignment: Alignment.center,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (cellDetail.showStartTime)
-                      Text(
-                        cellDetail.startTime.format24Hour(),
-                        style: TextStyle(color: cs.tertiary, fontSize: 9),
-                      ),
-                    Text(
-                      cellDetail.displayName,
-                      style: TextStyle(color: cs.onPrimaryContainer, fontSize: 16),
+              return GestureDetector(
+                onTap: () async {
+                  final TimeCellModel? edited = await widget._openEditTimeCellModal(context, cellDetail, ref);
+                  setState(() => cellDetail = edited ?? cellDetail);
+                },
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: widget.cellVGap, horizontal: widget.cellHGap),
+                  child: Container(
+                    height: widget.rowHeight - (widget.cellVGap * 2),
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    if (cellDetail.showEndTime)
-                      Text(
-                        cellDetail.endTime.format24Hour(),
-                        style: TextStyle(color: cs.tertiary, fontSize: 9),
-                      ),
-                  ],
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (cellDetail.showStartTime)
+                          Text(
+                            cellDetail.startTime.format24Hour(),
+                            style: TextStyle(color: cs.tertiary, fontSize: 9),
+                          ),
+                        Text(
+                          cellDetail.displayName,
+                          style: TextStyle(color: cs.onPrimaryContainer, fontSize: 16),
+                        ),
+                        if (cellDetail.showEndTime)
+                          Text(
+                            cellDetail.endTime.format24Hour(),
+                            style: TextStyle(color: cs.tertiary, fontSize: 9),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          );
-        }),
-        ),
-
+              );
+            }),
+          ),
         );
       }
 
@@ -500,6 +500,7 @@ class _ScheduleGridState extends ConsumerState<ScheduleGrid> {
                   if (!widget.editMode) {
                     if (isHead || occupied) return const SizedBox();
                     return _EmptyCell(
+                      outline: widget.editMode,
                       borderColor: cs.onSurface.withValues(alpha: 0.25),
                       radius: 8,
                       dashWidth: 6,
@@ -576,6 +577,7 @@ class _ScheduleGridState extends ConsumerState<ScheduleGrid> {
                       fit: StackFit.expand,
                       children: [
                         _EmptyCell(
+                          outline: widget.editMode,
                           borderColor: cs.onSurface.withValues(alpha: 0.25),
                           radius: 8,
                           dashWidth: 6,
@@ -690,6 +692,7 @@ class _ScheduleGridState extends ConsumerState<ScheduleGrid> {
 
 /// 空格子：透明填滿 + 虛線圓角框
 class _EmptyCell extends StatelessWidget {
+  final bool outline;
   final Color borderColor;
   final double radius;
   final double dashWidth;
@@ -697,6 +700,7 @@ class _EmptyCell extends StatelessWidget {
 
   const _EmptyCell({
     Key? key,
+    this.outline = true,
     required this.borderColor,
     this.radius = 8,
     this.dashWidth = 6,
@@ -705,18 +709,25 @@ class _EmptyCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _DashedRoundedRectPainter(
-        color: borderColor,
-        radius: radius,
-        dashWidth: dashWidth,
-        dashGap: dashGap,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        alignment: Alignment.topLeft,
-      ),
-    );
+    return outline
+        ? CustomPaint(
+            painter: _DashedRoundedRectPainter(
+              color: borderColor,
+              radius: radius,
+              dashWidth: dashWidth,
+              dashGap: dashGap,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              alignment: Alignment.topLeft,
+            ),
+          )
+        : Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF0C0D11),
+              borderRadius: BorderRadius.circular(radius),
+            ),
+        );
   }
 }
 

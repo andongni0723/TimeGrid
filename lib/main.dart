@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timegrid/models/course_chips_model.dart';
@@ -64,7 +64,7 @@ class MyHomePage extends ConsumerStatefulWidget {
 }
 
 class _MyHomePageState extends ConsumerState<MyHomePage> {
-  int _selectedIndex = 0;
+  int selectedIndex = 0;
   bool _editMode = false;
 
   void _switchEditMode() => setState(() => _editMode = !_editMode);
@@ -78,13 +78,45 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
 
     final cs = Theme.of(context).colorScheme;
     final scheduleController = ref.watch(scheduleProvider);
+    final scaffoldKey = GlobalKey<ScaffoldState>();
 
     return Scaffold(
+      key: scaffoldKey,
+      drawer: NavigationDrawer(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: (int idx) async {
+          Navigator.of(context).pop();
+          await Future.delayed(const Duration(milliseconds: 250));
+          setState(() => selectedIndex = idx);
+        },
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            child: Text(
+              'TimeGrid',
+              style: TextStyle(color: cs.primary, fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ),
+          Divider(height: 1, color: cs.outline),
+
+          const NavigationDrawerDestination(
+            icon: Icon(Icons.calendar_today_outlined),
+            selectedIcon: Icon(Icons.calendar_today),
+            label: Text('Courses'),
+          ),
+
+          const NavigationDrawerDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: Text('Settings'),
+          ),
+        ]
+      ),
       appBar: AppBar(
         backgroundColor: cs.surface,
         leading: IconButton(
           icon: const Icon(Icons.menu),
-          onPressed: () {}, // TODO: switch the schedules
+          onPressed: () => scaffoldKey.currentState?.openDrawer(),
         ),
         title: Text(widget.title),
         actions: [
@@ -195,36 +227,6 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget bottomNavigationBar(ColorScheme cs) {
-    return NavigationBar(
-      onDestinationSelected: (int index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-      backgroundColor: cs.surfaceContainerHighest,
-      indicatorColor: cs.primaryContainer,
-      selectedIndex: _selectedIndex,
-      destinations: const <Widget>[
-        NavigationDestination(
-          selectedIcon: Icon(Icons.home),
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.business_outlined),
-          selectedIcon: Icon(Icons.business),
-          label: 'Other',
-        ),
-        NavigationDestination(
-          selectedIcon: Icon(Icons.settings),
-          icon: Icon(Icons.settings_outlined),
-          label: 'Settings',
-        ),
-      ],
     );
   }
 }
