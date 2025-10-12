@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -9,9 +10,11 @@ import 'package:timegrid/models/storage_service.dart';
 import 'package:timegrid/models/time_cell_model.dart';
 import 'package:timegrid/provider.dart';
 import 'package:timegrid/schedule.dart';
+import 'package:timegrid/setting_page.dart';
 import 'package:timegrid/theme/Theme.dart';
 import 'package:timegrid/widget_bridge.dart';
 
+import 'about_page.dart';
 import 'components/file_io_json.dart';
 
 Future<void> main() async {
@@ -32,6 +35,7 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   final String version;
+
   const MyApp({super.key, required this.version});
 
   @override
@@ -48,22 +52,23 @@ class MyApp extends StatelessWidget {
           side: BorderSide.none,
         ),
       ),
-      home: MyHomePage(title: 'v$version'),
+      home: MyHomePage(version: version),
     );
   }
 }
 
 class MyHomePage extends ConsumerStatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  final String version;
+  const MyHomePage({super.key, required this.version});
 
-  final String title;
+  final String title = 'My Schedule';
 
   @override
   ConsumerState<MyHomePage> createState() => _MyHomePageState();
-
 }
 
 class _MyHomePageState extends ConsumerState<MyHomePage> {
+
   int selectedIndex = 0;
   bool _editMode = false;
 
@@ -87,7 +92,31 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
         onDestinationSelected: (int idx) async {
           Navigator.of(context).pop();
           await Future.delayed(const Duration(milliseconds: 250));
-          setState(() => selectedIndex = idx);
+          if (!mounted) return;
+
+          // Back to Course Page
+          if (idx == 0) {
+            setState(() => selectedIndex = 0);
+            return;
+          }
+
+          Widget pageToPush;
+          switch (idx) {
+            case 1:
+              pageToPush = const SettingPage();
+              break;
+            case 2:
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming Soon')));
+              return;
+            case 3:
+              pageToPush = AboutPage(version: widget.version);
+              break;
+            default:
+              pageToPush = const SizedBox.shrink();
+              return;
+          }
+
+          Navigator.of(context).push(MaterialPageRoute(builder: (_) => pageToPush));
         },
         children: [
           Padding(
@@ -98,19 +127,28 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
             ),
           ),
           Divider(height: 1, color: cs.outline),
-
+          const SizedBox(height: 8),
           const NavigationDrawerDestination(
             icon: Icon(Icons.calendar_today_outlined),
             selectedIcon: Icon(Icons.calendar_today),
             label: Text('Courses'),
           ),
-
           const NavigationDrawerDestination(
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings),
             label: Text('Settings'),
           ),
-        ]
+          const NavigationDrawerDestination(
+            icon: Icon(CupertinoIcons.heart),
+            selectedIcon: Icon(CupertinoIcons.heart_solid),
+            label: Text('Sponsor'),
+          ),
+          const NavigationDrawerDestination(
+            icon: Icon(Icons.info_outline),
+            selectedIcon: Icon(Icons.info),
+            label: Text('About'),
+          ),
+        ],
       ),
       appBar: AppBar(
         backgroundColor: cs.surface,
