@@ -99,22 +99,6 @@ Future<CourseModel?> editCourseBottomSheet(
                                     confirmType: ConfirmType.delete,
                                     onClick: deleteChip,
                                   );
-
-                                  /*
-                                  final bool? confirmed = await confirmDialog(
-                                      context,
-                                      "Delete Course Chip",
-                                      "Are you sure you want to delete this course chip?"
-                                  );
-
-                                  if (confirmed != true) return;
-                                  final idToRemove = data.id;
-                                  setState(() {
-                                    if (selectedChipId == data.id) selectedChipId = null;
-                                    chipsData.removeWhere((c) => c.id == idToRemove);
-                                  });
-                                  await storage.removeChip(idToRemove);
-                                   */
                                 },
                               );
                             }).toList(),

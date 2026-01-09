@@ -8,9 +8,6 @@ Future<TimeCellModel?> editTimeCellBottomSheet(BuildContext context, TimeCellMod
   final textTheme = Theme
       .of(context)
       .textTheme;
-  final colorScheme = Theme
-      .of(context)
-      .colorScheme;
   final formKey = GlobalKey<FormState>();
   final nameController = TextEditingController(text: timeCellModel.displayName);
 

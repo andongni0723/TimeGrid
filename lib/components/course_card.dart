@@ -175,7 +175,6 @@ class CourseCard extends StatelessWidget {
           maxLines: roomMaxLine,
           textDirection: textDir,
         );
-        final totalWrapH = titleHeightWrap + innerSpacing + roomHeightWrap;
       }
 
       final cardCore = Container(
