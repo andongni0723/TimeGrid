@@ -64,7 +64,7 @@ bool _isUpdateAvailable(String currentVersion, String latestVersion) {
 Future<Result<(String, String)>> _fetchLatestReleaseTag() async {
   try {
     var url = Uri.parse("https://api.github.com/repos/andongni0723/timegrid/releases/latest");
-    var res = await http.get(url).timeout(const Duration(seconds: 5));
+    var res = await http.get(url).timeout(const Duration(seconds: 10));
     if (res.statusCode == 200) {
       var body = json.decode(res.body) as Map<String, dynamic>;
       final tag = body['tag_name'] as String?;
