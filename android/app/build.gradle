@@ -9,6 +9,11 @@ android {
     namespace "com.andongni.timegrid"
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
+    def keystoreProperties = new Properties()
+    def keystorePropertiesFile = rootProject.file('key.properties')
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    }
     defaultConfig {
         minSdkVersion 26
         minSdkVersion flutter.minSdkVersion
@@ -36,9 +41,18 @@ android {
         versionName flutter.versionName ?: "1.0"
     }
 
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
     }
 
