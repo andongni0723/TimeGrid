@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timegrid/models/course_chips_model.dart';
 import 'package:timegrid/models/course_model.dart';
+import 'package:timegrid/utils/basic_dialog_util.dart';
 
 import '../provider.dart';
 import '../theme/Theme.dart';
 
-Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course, WidgetRef ref, VoidCallback? onDelete) {
+Future<CourseModel?> editCourseBottomSheet(
+    BuildContext ctx, CourseModel course, WidgetRef ref, VoidCallback? onDelete) {
   final formKey = GlobalKey<FormState>();
   final roomController = TextEditingController(text: course.room);
   final cs = Theme.of(ctx).colorScheme;
@@ -66,29 +68,53 @@ Future<CourseModel?> editCourseBottomSheet(BuildContext ctx, CourseModel course,
                                 avatar: CircleAvatar(backgroundColor: data.color),
                                 selected: selectedChipId == data.id,
                                 side: selectedChipId == data.id
-                                  ? BorderSide(color: cs.primary, width: 2)
-                                  : BorderSide.none,
+                                    ? BorderSide(color: cs.primary, width: 2)
+                                    : BorderSide.none,
                                 onSelected: (bool selected) {
                                   setState(() {
                                     selectedChipId = selected ? data.id : null;
                                     roomController.text = data.room;
                                   });
                                 },
-                                deleteIcon: const Icon(Icons.close, size: 18,),
+                                deleteIcon: const Icon(
+                                  Icons.close,
+                                  size: 18,
+                                ),
                                 onDeleted: () async {
+                                  void deleteChip() async {
+                                    final idToRemove = data.id;
+                                    setState(() {
+                                      if (selectedChipId == data.id) selectedChipId = null;
+                                      chipsData.removeWhere((c) => c.id == idToRemove);
+                                    });
+                                    await storage.removeChip(idToRemove);
+                                  }
+
+                                  await showConfirmLeaveDialog(
+                                    context,
+                                    title: "Delete Course Chip",
+                                    text: "Are you sure you want to delete this course chip?",
+                                    onDismiss: () => {},
+                                    confirmText: "Delete",
+                                    confirmType: ConfirmType.delete,
+                                    onClick: deleteChip,
+                                  );
+
+                                  /*
                                   final bool? confirmed = await confirmDialog(
                                       context,
                                       "Delete Course Chip",
                                       "Are you sure you want to delete this course chip?"
                                   );
-                                  if (confirmed != true) return;
 
+                                  if (confirmed != true) return;
                                   final idToRemove = data.id;
                                   setState(() {
                                     if (selectedChipId == data.id) selectedChipId = null;
                                     chipsData.removeWhere((c) => c.id == idToRemove);
                                   });
                                   await storage.removeChip(idToRemove);
+                                   */
                                 },
                               );
                             }).toList(),

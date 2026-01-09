@@ -17,38 +17,31 @@ const Color primaryColor = _cPrimary;
 ColorScheme darkColorScheme = const ColorScheme(
   brightness: Brightness.dark,
 
-  // 主色系（你給了）
   primary: _cPrimary,
-  onPrimary: _cDarkOnBackground, // 你原文是白/淺灰字，使用 E6E6E6
+  onPrimary: _cDarkOnBackground,
   primaryContainer: _cPrimaryContainerDark,
   onPrimaryContainer: _cDarkOnBackground,
 
-  // 次要色（你給了）
   secondary: _cSecondary,
   onSecondary: _cDarkOnBackground,
   secondaryContainer: _cSecondaryContainer,
   onSecondaryContainer: _cDarkOnBackground,
 
-  // 背景 / surface（你給了）
   surface: _cDarkSurface,
   onSurface: _cDarkOnSurface,
 
-  // surface variant（你給了）
   surfaceContainerHighest: _cSurfaceContainerHighest,
   onSurfaceVariant: _cDarkOnSurfaceVariant,
 
-  // 其他 M3 欄位（Compose 有的也有對應）
   outline: _cOutline,
   surfaceTint: _cSurfaceTint,
 
-  // 以下為沒有在原文指定的欄位，我放入合理預設（可再調整）
-  error: Color(0xFFB00020),
+  error: Color(0xFFD32F2F),
   onError: Color(0xFFFFFFFF),
   inverseSurface: Color(0xFFF5F5F5),
   onInverseSurface: Color(0xFF14161D),
   inversePrimary: Color(0xFF6563E6),
   shadow: Color(0xFF000000),
-  // tertiary / onTertiary / containers 可視需求再補
   tertiary: Color(0xFFB39DDB),
   onTertiary: Color(0xFFFFFFFF),
   tertiaryContainer: Color(0xFF4A3F7A),
@@ -58,10 +51,9 @@ ColorScheme darkColorScheme = const ColorScheme(
 ColorScheme lightColorScheme = const ColorScheme(
   brightness: Brightness.light,
 
-  // 你提供的 light 色票
   primary: _cPrimary,
-  onPrimary: Color(0xFF14161D), // 你給的是深色字
-  primaryContainer: Color(0xFFF0EDFF), // fallback（淺的 primary container）
+  onPrimary: Color(0xFF14161D),
+  primaryContainer: Color(0xFFF0EDFF),
   onPrimaryContainer: Color(0xFF14161D),
 
   secondary: _cSecondary,
@@ -74,7 +66,6 @@ ColorScheme lightColorScheme = const ColorScheme(
   surfaceContainerHighest: Color(0xFFFFFFFF),
   onSurfaceVariant: Color(0xFF14161D),
 
-  // fallback / 補齊欄位
   outline: Color(0xFFE6E6E6),
   surfaceTint: _cPrimary,
 
@@ -91,6 +82,7 @@ ColorScheme lightColorScheme = const ColorScheme(
   onTertiaryContainer: Color(0xFF14161D),
 );
 
+/// Provide to chip of course card colors
 const List<Color> colorLibrary = [
   Color(0xFF2E3A8C),
   Color(0xFF006D5B),

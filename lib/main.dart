@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:timegrid/components/update_version_dialog.dart';
 import 'package:timegrid/models/course_chips_model.dart';
 import 'package:timegrid/models/course_model.dart';
 import 'package:timegrid/models/storage_service.dart';
@@ -73,6 +74,14 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
   bool _editMode = false;
 
   void _switchEditMode() => setState(() => _editMode = !_editMode);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showUpdateVersionDialog(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

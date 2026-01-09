@@ -89,7 +89,7 @@ class AboutPage extends StatelessWidget {
                     aboutListTile(
                       icon: FontAwesomeIcons.code,
                       title: 'Version',
-                      subtitle: '0.8.1',
+                      subtitle: version,
                     ),
                     aboutListTile(
                       icon: FontAwesomeIcons.github,
