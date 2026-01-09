@@ -18,7 +18,7 @@ int compareVersion(String a, String b) {
   var maxLen = max(pa.length, pb.length);
   for (var i = 0; i < maxLen; i++) {
     var ai = pa.length > i ? int.parse(pa[i]) : 0;
-    var bi = pb.length > i ? int.parse(pa[i]) : 0;
+    var bi = pb.length > i ? int.parse(pb[i]) : 0;
     if (ai != bi) return ai.compareTo(bi);
   }
   return 0;
