@@ -1,11 +1,15 @@
 # Changelog
 
-## v0.10.4
-Update:
+## v0.10.5
+Updates:
 - Refactor Update Available Panel
+- Add a direct download button.
+- Change the release to use an arm64 APK file.
 
-更新:
-- 重構有用更新面板。
+更新內容:
+- 重構「有可用更新」面板。
+- 新增「直接下載」按鈕。
+- Release 改成使用 arm64 APK 檔案。
 
 ## v0.10.3
 Update:
