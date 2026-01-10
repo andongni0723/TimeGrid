@@ -5,7 +5,7 @@ import 'package:timegrid/models/course_model.dart';
 import 'package:timegrid/utils/basic_dialog_util.dart';
 
 import '../provider.dart';
-import '../theme/Theme.dart';
+import '../theme/theme.dart';
 
 Future<CourseModel?> editCourseBottomSheet(
     BuildContext ctx, CourseModel course, WidgetRef ref, VoidCallback? onDelete) {

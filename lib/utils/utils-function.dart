@@ -24,6 +24,8 @@ int compareVersion(String a, String b) {
   return 0;
 }
 
+double bytesToMiB(int bytes, {int fractionDigits = 2}) => bytes / (1024 * 1024);
+
 extension StringPrefix on String {
   String removePrefix(String prefix) {
     return startsWith(prefix) ? substring(prefix.length) : this;

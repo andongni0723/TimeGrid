@@ -6,7 +6,7 @@ import 'package:timegrid/models/course_model.dart';
 import 'package:timegrid/models/storage_service.dart';
 import 'package:timegrid/models/time_cell_model.dart';
 import 'package:timegrid/provider.dart';
-import 'package:timegrid/theme/Theme.dart';
+import 'package:timegrid/theme/theme.dart';
 import 'package:timegrid/widget_bridge.dart';
 import 'dart:math' as math;
 

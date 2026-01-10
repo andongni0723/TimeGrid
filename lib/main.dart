@@ -12,7 +12,8 @@ import 'package:timegrid/models/time_cell_model.dart';
 import 'package:timegrid/provider.dart';
 import 'package:timegrid/schedule.dart';
 import 'package:timegrid/setting_page.dart';
-import 'package:timegrid/theme/Theme.dart';
+import 'package:timegrid/theme/font.dart';
+import 'package:timegrid/theme/theme.dart';
 import 'package:timegrid/widget_bridge.dart';
 
 import 'about_page.dart';
@@ -46,6 +47,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: darkColorScheme,
         fontFamily: 'Poppins',
+        textTheme: appTextTheme,
         useMaterial3: true,
         chipTheme: ChipThemeData(
           backgroundColor: darkColorScheme.secondaryContainer,
