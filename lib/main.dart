@@ -14,6 +14,7 @@ import 'package:timegrid/schedule.dart';
 import 'package:timegrid/setting_page.dart';
 import 'package:timegrid/theme/font.dart';
 import 'package:timegrid/theme/theme.dart';
+import 'package:timegrid/utils/basic_dialog_util.dart';
 import 'package:timegrid/widget_bridge.dart';
 
 import 'about_page.dart';
@@ -62,6 +63,7 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends ConsumerStatefulWidget {
   final String version;
+
   const MyHomePage({super.key, required this.version});
 
   final String title = 'My Schedule';
@@ -71,7 +73,6 @@ class MyHomePage extends ConsumerStatefulWidget {
 }
 
 class _MyHomePageState extends ConsumerState<MyHomePage> {
-
   int selectedIndex = 0;
   bool _editMode = false;
 
@@ -117,6 +118,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
               pageToPush = const SettingPage();
               break;
             case 2:
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming Soon')));
               return;
             case 3:
@@ -196,7 +198,29 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                   MenuController.maybeOf(context)?.close();
                   importJsonFromSystemFile(context, ref);
                 },
-              )
+              ),
+              MenuItemButton(
+                leadingIcon: Icon(FontAwesomeIcons.trashCan, size: 18.0, color: cs.error),
+                style: MenuItemButton.styleFrom(backgroundColor: cs.surfaceContainerHighest),
+                child: Text('Clear the schedule', style: TextStyle(color: cs.error)),
+                onPressed: () async {
+                  MenuController.maybeOf(context)?.close();
+                  var result = false;
+                  await showConfirmLeaveDialog(
+                    context,
+                    title: 'Clear Schedule and Chips',
+                    text: 'Are you sure to clear the schedule?\nMake sure you save the data before.',
+                    confirmText: 'Clear',
+                    confirmType: ConfirmType.delete,
+                    onDismiss: () => {result = false},
+                    onClick: () => {result = true},
+                  );
+                  if (!result) return;
+                  await scheduleController.storage.clearCourses();
+                  await scheduleController.storage.clearChips();
+                  setState(() {});
+                },
+              ),
             ],
           )
         ],

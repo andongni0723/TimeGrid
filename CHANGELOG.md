@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.11.0
+更新內容:
+- Add clear schedule function
+
+Updates:
+- Add clear schedule function
+
 ## v0.10.5
 Updates:
 - Refactor Update Available Panel

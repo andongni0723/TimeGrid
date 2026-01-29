@@ -51,7 +51,7 @@ Future<void> showConfirmLeaveDialog(
     builder: (_) => AlertDialog(
       icon: icon,
       title: Text(title),
-      content: Text(text),
+      content: Text(text, style: const TextStyle(fontWeight: FontWeight.w600)),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(_, false),

@@ -7,6 +7,7 @@ import 'package:timegrid/models/storage_service.dart';
 import 'package:timegrid/models/time_cell_model.dart';
 import 'package:timegrid/provider.dart';
 import 'package:timegrid/theme/theme.dart';
+import 'package:timegrid/utils/basic_dialog_util.dart';
 import 'package:timegrid/widget_bridge.dart';
 import 'dart:math' as math;
 
@@ -154,6 +155,22 @@ class _ScheduleGridState extends ConsumerState<ScheduleGrid> {
       _isLoadingFromHive = false;
     }
   }
+
+  Future<void> _clearSchedule() async {
+    var result = false;
+    await showConfirmLeaveDialog(
+        context,
+        title: 'Clear Schedule',
+        text: 'Are you sure to clear the schedule?\nMake sure you save the data before.',
+        onDismiss: () => { result = false },
+        onClick: () => { result = true },
+    );
+
+    if (!result) return;
+    _occupiedMap.clear();
+    setState(() {});
+  }
+
 
   void _scheduleChanged() {
     if (_isLoadingFromHive) return;
