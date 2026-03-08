@@ -4,6 +4,9 @@
 </div>
 
 <p align="center">
+  <a href="https://deepwiki.com/andongni0723/TimeGrid">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+  </a>
   <a href="https://github.com/andongni0723/TimeGrid/actions/workflows/flutter-ci.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/andongni0723/TimeGrid/flutter-ci.yml?branch=main&label=CI" alt="CI" />
   </a>
